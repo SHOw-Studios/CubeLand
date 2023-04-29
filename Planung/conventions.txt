@@ -4,3 +4,4 @@ Packages: klein
 Klassen: groß
 methoden: klein
 Klassenvariablen: m{Variablenname}
+blocktextures 16x16p
