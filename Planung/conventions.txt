@@ -1,0 +1,6 @@
+Grundsätzlich:
+  CamelCase
+Packages: klein
+Klassen: groß
+methoden: klein
+Klassenvariablen: m{Variablenname}
