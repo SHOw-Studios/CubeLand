@@ -1,6 +1,7 @@
 package io.show.graphics;
 
 import io.show.graphics.internal.Window;
+
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
