@@ -1,0 +1,27 @@
+{
+  "types": {
+    "background": [
+      { "wood": "Overworld/wood.bmp" },
+      { "leafes": "Overworld/leafes.bmp" },
+      { "woodPanel": "Panels/woodPanels.bmp" }
+    ],
+    "liquid": [
+      { "lava": "Liquid/lava.bmp" },
+      { "lavaSurfice": "Liquid/lavaSurfice.bmp" },
+      { "water": "Liquid/water.bmp" },
+      { "waterSurfice": "Liquid/waterSurfice.bmp" }
+    ],
+    "foreground": [
+      { "grassBlock": "Overworld/grassBlock.bmp" },
+      { "grassWall": "Overworld/grassWall.bmp" },
+      { "leafes": "Overworld/leafes.bmp" },
+      { "lianeWall": "Overworld/lianewall.bmp" },
+      { "wood": "Overworld/wood.bmp" },
+      { "woodPanel": "Panels/woodPanels.bmp" },
+      { "coalOre": "Underworld/coalOre.bmp" },
+      { "diaOre": "Underworld/diaOre.bmp" },
+      { "lapisOre": "Underworld/lapisOre.bmp" },
+      { "stone": "Underworld/stone.bmp" }
+    ]
+  }
+}
