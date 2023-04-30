@@ -6,11 +6,20 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Graphics {
 
     public static void main(String[] args) {
+
+        registerBitmap("air", new Bitmap(16, 16));
+        registerBitmap("dirt", new Bitmap(16, 16));
+        registerBitmap("stone", new Bitmap(16, 16));
 
         init();
 
@@ -19,6 +28,20 @@ public class Graphics {
         window.destroy();
 
         terminate();
+    }
+
+    private static Map<String, Bitmap> bitmaps = new HashMap<>();
+
+    /**
+     * Registers a single bitmap with an unique identifier and returns if the operation was successfull.<br>
+     * Please notice that you can only assign a bitmap to an identifier once, so you cannot re-register a bitmap twice with the same id
+     *
+     * @param id     a unique identifier for the bitmap
+     * @param bitmap the bitmap to be registered
+     * @return true if there was no bitmap registered with this id before
+     */
+    public static boolean registerBitmap(String id, Bitmap bitmap) {
+        return bitmaps.putIfAbsent(id, bitmap) == null;
     }
 
     /**
