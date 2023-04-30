@@ -1,27 +1,30 @@
 {
-  "types": {
-    "background": [
-      { "wood": "Overworld/wood.bmp" },
-      { "leafes": "Overworld/leafes.bmp" },
-      { "woodPanel": "Panels/woodPanels.bmp" }
-    ],
-    "liquid": [
-      { "lava": "Liquid/lava.bmp" },
-      { "lavaSurfice": "Liquid/lavaSurfice.bmp" },
-      { "water": "Liquid/water.bmp" },
-      { "waterSurfice": "Liquid/waterSurfice.bmp" }
-    ],
-    "foreground": [
-      { "grassBlock": "Overworld/grassBlock.bmp" },
-      { "grassWall": "Overworld/grassWall.bmp" },
-      { "leafes": "Overworld/leafes.bmp" },
-      { "lianeWall": "Overworld/lianewall.bmp" },
-      { "wood": "Overworld/wood.bmp" },
-      { "woodPanel": "Panels/woodPanels.bmp" },
-      { "coalOre": "Underworld/coalOre.bmp" },
-      { "diaOre": "Underworld/diaOre.bmp" },
-      { "lapisOre": "Underworld/lapisOre.bmp" },
-      { "stone": "Underworld/stone.bmp" }
-    ]
+  "block": {
+    "liquid": {
+      "lava": "block/liquid/lava.bmp",
+      "lava_surface": "block/liquid/lava_surface.bmp",
+      "water": "block/liquid/water.bmp",
+      "water_surface": "block/liquid/water_surface.bmp"
+    },
+    "overworld": {
+      "grass_block": "block/overworld/grass_block.bmp",
+      "grass_wall": "block/overworld/grass_wall.bmp",
+      "leaves": "block/overworld/leaves.bmp",
+      "liane_wall": "block/overworld/liane_wall.bmp",
+      "wood": "block/overworld/wood.bmp"
+    },
+    "panels": {
+      "wood_panels": "block/panel/wood_panel.bmp"
+    },
+    "underworld": {
+      "coal_ore": "block/underworld/coal_ore.bmp",
+      "diamond_ore": "block/underworld/diamond_ore.bmp",
+      "lapis_ore": "block/underworld/lapis_ore.bmp",
+      "stone": "block/underworld/stone.bmp"
+    }
+  },
+  "misc": {
+    "unknown_dark": "misc/unknown_dark.bmp",
+    "unknown_light": "misc/unknown_light.bmp"
   }
 }
