@@ -8,7 +8,7 @@ public class Renderer {
     }
 
     public boolean drawBitmap(Bitmap bitmap) {
-
+    return false;
     }
 
 }
