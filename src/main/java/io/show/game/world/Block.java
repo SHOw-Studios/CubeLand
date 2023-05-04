@@ -1,4 +1,4 @@
-package io.show.game;
+package io.show.game.world;
 
 public class Block {
 
