@@ -1,27 +1,37 @@
+Jede Welt besteht aus einem einzigen Ordner mit folgender Struktur:
+
+<welt name>
+│
+├─ world.json
+│
+├─ chunk_0.world
+│
+├─ chunk_16.world
+│
+├─ chunk_32.world
+│
+├─ chunk_<x position>.world
+│
+...
+
+<welt name> : der Name der Welt
+<x position> : die Position
+
+In der world.json Datei werden Entities, der Welt-Seed und noch andere Daten wie die aktuelle Spielzeit gespeichert.
+
+In den chunk_<x position>.world Dateien wird ein Array mit allen Blöcken und eine Liste der Entities in diesem Chunk gespeichert.
+Das Format funktioniert folgendermaßen:
+
 # entities
-0
-1
-2
-3
-6
-5
-7
-8
-0
-1
+<entity>
+<entity>
 ...
 
 # blocks
-1
-3
-4
-2
-6
-3
-8
-2
-5
-4
-5
-3
+<block>
+<block>
 ...
+<block>
+
+<entity> : Index des jeweiligen Entities, jenes wird in der world.json unter diesem Index gespeichert
+<block> : der Index des jeweiligen Blocktyps an der codierten Position
