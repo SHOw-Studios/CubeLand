@@ -30,7 +30,7 @@ public class Graphics {
         terminate();
     }
 
-    private static Map<String, Bitmap> bitmaps = new HashMap<>();
+    private static final Map<String, Bitmap> bitmaps = new HashMap<>();
 
     /**
      * Registers a single bitmap with an unique identifier and returns if the operation was successfull.<br>
