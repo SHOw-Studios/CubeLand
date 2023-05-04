@@ -11,10 +11,6 @@ public class Generator {
     long seed = random.nextLong();
 
     // Map size in Tiles
-    private int MAP_MEDIUM_WIDTH = 6400;
-    private int MAP_MEDIUM_HIGHT = 1800;
-    private int MAP_LARGE_WIDTH = 8400;
-    private int MAP_LARGE_HIGHT = 2400;
 
     private enum MapSize{medium,large}
 
@@ -41,9 +37,9 @@ public class Generator {
         int[][] MapArray = new int[0][0];
         switch (mapSize) {
             case medium -> {
-                MapArray = new int[MAP_MEDIUM_WIDTH][MAP_MEDIUM_HIGHT];
-                for (int i = 0; i < MAP_MEDIUM_WIDTH; i++) {
-                    float noise = OpenSimplex2.noise2(seed, xOff, 0)*(MAP_MEDIUM_HIGHT-150)+50;
+                MapArray = new int[World.MAP_MEDIUM_WIDTH][World.MAP_MEDIUM_HIGHT];
+                for (int i = 0; i < World.MAP_MEDIUM_WIDTH; i++) {
+                    float noise = OpenSimplex2.noise2(seed, xOff, 0)*(World.MAP_MEDIUM_HIGHT-150)+50;
                     //-150 to get min 50 Ground and min 100 to build above
                     //+50 to get min 50 Ground
                     int roundedNoise = (int) Math.round(noise);
@@ -51,8 +47,8 @@ public class Generator {
                 }
             }
             case large -> {
-                MapArray = new int[MAP_LARGE_WIDTH][MAP_LARGE_HIGHT];
-                for (int i = 0; i < MAP_LARGE_WIDTH; i++) {
+                MapArray = new int[World.MAP_LARGE_WIDTH][World.MAP_LARGE_HIGHT];
+                for (int i = 0; i < World.MAP_LARGE_WIDTH; i++) {
                     float noise = OpenSimplex2.noise2(seed, xOff, 0);
                     int roundedNoise = (int) Math.round(noise);
                     MapArray[i][roundedNoise]=1;

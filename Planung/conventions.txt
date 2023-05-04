@@ -5,3 +5,6 @@ Klassen: groß
 methoden: klein
 Klassenvariablen: m{Variablenname}
 blocktextures 16x16p
+World[x][y][y(depth)]
+depth=1: front
+depth=2: back

@@ -1,6 +1,7 @@
 package io.show.storage;
 
 import java.io.File;
+import io.show.game.world.World;
 
 public class WorldFile {
 
