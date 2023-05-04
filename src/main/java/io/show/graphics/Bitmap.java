@@ -9,7 +9,6 @@ public class Bitmap {
     private int m_Height;
     private float m_Opacity;
 
-
     public Bitmap(int[] data, int width, int height, float opacity) {
         m_Data = data;
         m_Width = width;

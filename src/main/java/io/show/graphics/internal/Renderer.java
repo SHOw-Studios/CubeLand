@@ -8,7 +8,11 @@ public class Renderer {
     }
 
     public boolean drawBitmap(Bitmap bitmap) {
+<<<<<<< Updated upstream
     return false;
+=======
+        return false;
+>>>>>>> Stashed changes
     }
 
 }
