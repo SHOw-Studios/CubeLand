@@ -1,4 +1,4 @@
-package io.show.world;
+package io.show.game.world;
 
 import vendor.opensimplex2.OpenSimplex2;
 
