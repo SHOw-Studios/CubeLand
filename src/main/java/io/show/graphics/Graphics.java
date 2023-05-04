@@ -17,9 +17,9 @@ public class Graphics {
 
     public static void main(String[] args) {
 
-        registerBitmap("air", new Bitmap(16, 16));
-        registerBitmap("dirt", new Bitmap(16, 16));
-        registerBitmap("stone", new Bitmap(16, 16));
+        registerBitmap(0, new Bitmap(16, 16, 0xff00ff, 0.0f));
+        registerBitmap(1, new Bitmap(16, 16, 0x888888, 1.0f));
+        registerBitmap(2, new Bitmap(16, 16, 0x883322, 1.0f));
 
         init();
 
@@ -30,17 +30,19 @@ public class Graphics {
         terminate();
     }
 
-    private static final Map<String, Bitmap> bitmaps = new HashMap<>();
+    private static final Map<Long, Bitmap> bitmaps = new HashMap<>();
 
     /**
-     * Registers a single bitmap with an unique identifier and returns if the operation was successfull.<br>
-     * Please notice that you can only assign a bitmap to an identifier once, so you cannot re-register a bitmap twice with the same id
+     * Registers a single bitmap with a unique identifier and returns if the operation was successfully.
+     * <p>
+     * Please notice that you can only assign a bitmap to an identifier once,
+     * so you cannot re-register a bitmap twice with the same id
      *
      * @param id     a unique identifier for the bitmap
      * @param bitmap the bitmap to be registered
      * @return true if there was no bitmap registered with this id before
      */
-    public static boolean registerBitmap(String id, Bitmap bitmap) {
+    public static boolean registerBitmap(long id, Bitmap bitmap) {
         return bitmaps.putIfAbsent(id, bitmap) == null;
     }
 
@@ -52,7 +54,7 @@ public class Graphics {
         // Print out the currently used LWJGL version
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
-        // Setup an error callback. The default implementation
+        // Set up an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
 

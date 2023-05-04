@@ -1,7 +1,14 @@
 package io.show.graphics;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
+/**
+ * @author Felix Schreiber
+ * <p>
+ * A wrapper class for managing image data in form of an integer array,
+ * a width and a height, and a float opacity value for transparancy.
+ */
 public class Bitmap {
 
     private int[] m_Data;
@@ -18,6 +25,14 @@ public class Bitmap {
 
     public Bitmap(int width, int height) {
         this(new int[width * height], width, height, 1.0f);
+    }
+
+    public Bitmap(int width, int height, int fillcolor, float opacity) {
+        m_Data = new int[width * height];
+        Arrays.fill(m_Data, fillcolor);
+        m_Width = width;
+        m_Height = height;
+        m_Opacity = opacity;
     }
 
     public Bitmap(BufferedImage image, float opacity) {
