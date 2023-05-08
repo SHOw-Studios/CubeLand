@@ -29,6 +29,15 @@ public class Generator {
                 System.out.print(mat[i][j] + " ");
     }
 
+    public int[][] generate(MapSize mapSize){
+        int[][] Map;
+        Map = getGroundHight(mapSize);
+        // TODO: 08.05.2023 make Generator for Ores 
+        // TODO: 08.05.2023 make Generator for Trees 
+        // TODO: 08.05.2023 Hardcode Trees (perlinnoise for leaf count)
+        return Map;
+    }
+
     /**
      * Returns an int[][] Array with the values on witch PerlinNoise is set to 1,
      * to get a value that saperates air and Ground
@@ -37,9 +46,9 @@ public class Generator {
         int[][] MapArray = new int[0][0];
         switch (mapSize) {
             case medium -> {
-                MapArray = new int[World.MAP_MEDIUM_WIDTH][World.MAP_MEDIUM_HIGHT];
-                for (int i = 0; i < World.MAP_MEDIUM_WIDTH; i++) {
-                    float noise = OpenSimplex2.noise2(seed, xOff, 0)*(World.MAP_MEDIUM_HIGHT-150)+50;
+                MapArray = new int[Constants.MAP_MEDIUM_WIDTH][Constants.MAP_MEDIUM_HEIGHT];
+                for (int i = 0; i < Constants.MAP_MEDIUM_WIDTH; i++) {
+                    float noise = OpenSimplex2.noise2(seed, xOff, 0)*(Constants.MAP_MEDIUM_HEIGHT -150)+50;
                     //-150 to get min 50 Ground and min 100 to build above
                     //+50 to get min 50 Ground
                     int roundedNoise = (int) Math.round(noise);
@@ -47,8 +56,8 @@ public class Generator {
                 }
             }
             case large -> {
-                MapArray = new int[World.MAP_LARGE_WIDTH][World.MAP_LARGE_HIGHT];
-                for (int i = 0; i < World.MAP_LARGE_WIDTH; i++) {
+                MapArray = new int[Constants.MAP_LARGE_WIDTH][Constants.MAP_LARGE_HEIGHT];
+                for (int i = 0; i < Constants.MAP_LARGE_WIDTH; i++) {
                     float noise = OpenSimplex2.noise2(seed, xOff, 0);
                     int roundedNoise = (int) Math.round(noise);
                     MapArray[i][roundedNoise]=1;
@@ -60,6 +69,25 @@ public class Generator {
         }
         return MapArray;
     }
+
+    public int[][] setWater(int[][] Map){
+        for(int i = 0; i < Map[0].length; i++){
+            for(int j=Map[1].length/2;i<Map[1].length;i++){
+                // TODO: 08.05.2023 iterate throug world height and set water to everything outside of perlinnoise
+                // TODO: 08.05.2023 send help
+            }
+        }
+    }
+
+    public long getSeed() {
+        return seed;
+    }
+
+    public long newSeed(){
+        seed = random.nextLong();
+        return seed;
+    }
+
     float noiseValue = OpenSimplex2.noise2(seed, xOff, 0.0);
 
 }
