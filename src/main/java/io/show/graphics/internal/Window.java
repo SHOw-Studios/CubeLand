@@ -68,10 +68,13 @@ public class Window {
     }
 
     /**
-     * Executes the window loop once:<br>
-     * 1. clear the framebuffer<br>
-     * 2. swap the framebuffer<br>
-     * 3. poll for window events<br>
+     * Executes the window loop once:
+     * <p>
+     * 1. clear the framebuffer
+     * <p>
+     * 2. swap the framebuffer
+     * <p>
+     * 3. poll for window events
      *
      * @return <b>true</b> while the window is open
      */
