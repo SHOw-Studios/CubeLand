@@ -4,11 +4,11 @@ public class MediumWorld {
     private static final int WIDTH = Constants.MAP_MEDIUM_WIDTH;
     private static final int HEIGHT = Constants.MAP_MEDIUM_HEIGHT;
 
-    private Generator generator = new Generator();
+    private final Generator generator = new Generator(Generator.MapSize.medium, HEIGHT, WIDTH);
 
     public int[][] Map;
 
-    MediumWorld(){
+    MediumWorld() {
         Map = generator.generate();
     }
 }
