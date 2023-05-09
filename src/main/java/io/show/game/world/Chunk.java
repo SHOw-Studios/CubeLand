@@ -5,28 +5,37 @@ public class Chunk {
     private static final int WIDTH = 16;
     private int HEIGHT;
     private static final int LAYERS = 2;
+    private int m_StartPosition;
+    private World m_ParentWorld;
+    private int[][][] m_Blocks;
 
-    private Block[] m_Blocks;
-
-    public Chunk(int HEIGHT) {
-        m_Blocks = new Block[LAYERS][HEIGHT][WIDTH];
-
+    public int getHEIGHT() {
+        return HEIGHT;
     }
 
-    public Block getBlock(int x, int y, int l) {
-        return m_Blocks[x + y * WIDTH + l * WIDTH * HEIGHT];
+    public int getM_StartPosition() {
+        return m_StartPosition;
     }
 
-    public Block getBlock(int idx) {
-        return m_Blocks[idx];
+    public World getM_ParentWorld() {
+        return m_ParentWorld;
     }
 
-    public Block setBlock(int x, int y, int l, Block block) {
-        return m_Blocks[x + y * WIDTH + l * WIDTH * HEIGHT] = block;
+    public int[][][] getM_Blocks() {
+        return m_Blocks;
     }
 
-    public Block setBlock(int idx, Block block) {
-        return m_Blocks[idx] = block;
+    public static int getWIDTH() {
+        return WIDTH;
+    }
+
+    public Chunk(int height, int startPosition, World parentWorld) {
+        HEIGHT = height;
+        m_Blocks = new int[WIDTH][HEIGHT][LAYERS];
+        m_StartPosition = startPosition;
+        m_ParentWorld = parentWorld;
+        Generator generator = new Generator(parentWorld, this);
+        m_Blocks = generator.generate();
     }
 
 }
