@@ -1,30 +1,62 @@
 package io.show.graphics;
 
+import io.show.graphics.internal.Renderer;
 import io.show.graphics.internal.Window;
-
+import io.show.graphics.internal.gl.GLBuffer;
+import io.show.graphics.internal.gl.Shader;
+import io.show.graphics.internal.gl.VertexArray;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL15.*;
 
 public class Graphics {
 
     public static void main(String[] args) {
 
+        init();
+
         registerBitmap(0, new Bitmap(16, 16, 0xff00ff, 0.0f));
         registerBitmap(1, new Bitmap(16, 16, 0x888888, 1.0f));
         registerBitmap(2, new Bitmap(16, 16, 0x883322, 1.0f));
 
-        init();
+        VertexArray vertexArray = new VertexArray();
+
+        int[] indices = new int[]{0, 1, 2, 2, 3, 0};
+        ByteBuffer buffer = ByteBuffer.allocateDirect(indices.length * Integer.BYTES).order(ByteOrder.nativeOrder());
+        buffer.asIntBuffer().put(indices);
+        GLBuffer indexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
+
+        float[] vertices = new float[]{0, 0, 0, 1, 1, 1, 1, 0};
+        buffer = ByteBuffer.allocateDirect(vertices.length * Float.BYTES).order(ByteOrder.nativeOrder());
+        buffer.asFloatBuffer().put(vertices);
+        GLBuffer vertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
+
+        VertexArray.Layout layout = new VertexArray.Layout().pushFloat(2).pushFloat(4);
+        vertexArray.bind().bindBuffer(vertexBuffer, layout).unbind();
+
+        Shader shader = null;
+        try {
+            shader = new Shader("res/shaders/blocks/opaque.shader");
+        } catch (Shader.CompileStatusException e) {
+            throw new RuntimeException(e);
+        } catch (Shader.LinkStatusException e) {
+            throw new RuntimeException(e);
+        } catch (Shader.ValidateStatusException e) {
+            throw new RuntimeException(e);
+        }
 
         Window window = new Window(300, 300, "Hello World");
-        while (window.loopOnce()) ;
+        while (window.loopOnce()) {
+            glClear(GL_COLOR_BUFFER_BIT);
+            Renderer.render(vertexArray, indexBuffer, shader);
+        }
         window.destroy();
 
         terminate();
@@ -60,6 +92,14 @@ public class Graphics {
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
+    }
+
+    public static boolean applyTextures() {
+
+        bitmaps.forEach((id, bitmap) -> {
+        });
+
+        return false;
     }
 
     /**
