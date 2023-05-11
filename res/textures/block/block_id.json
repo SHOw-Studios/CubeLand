@@ -1,0 +1,29 @@
+{
+  "air": {
+    "air": "0"
+  },
+  "liquid": {
+    "lava": "2",
+    "lava_surface": "3",
+    "water": "4",
+    "watersurface":  "5"
+
+  },
+  "overworld": {
+    "grassblock": "6",
+    "grass_wall": "7",
+    "leaves": "8",
+    "liane_wall": "9",
+    "wood": "10"
+  },
+  "panel": {
+    "wood_panel": "11"
+  },
+  "underworld": {
+    "coal_ore": "12",
+    "dimand_ore": "13",
+    "lapis_ore": "14",
+    "stone": "15"
+  }
+
+}
