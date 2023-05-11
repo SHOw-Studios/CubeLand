@@ -2,64 +2,75 @@ package io.show.game.world;
 
 import vendor.opensimplex2.OpenSimplex2;
 
-import java.util.Arrays;
 import java.util.Random;
 
 public class Generator {
-    double xOff = 0;
-    Random random = new Random();
-    long seed = random.nextLong();
+    private double xOff;
+    private Random random = new Random();
+    private int HEIGHT;
+    private int WIDTH;
+    private long m_HeightSeed;
+    private int m_StartPos;
+    private long m_OrelikelynessSeed;
+    private long m_OrehightSeed1;
+    private long m_OrehightSeed2;
+    private long m_WhichOreSeed;
+    private Orelikelikelyness ores = new Orelikelikelyness(m_OrehightSeed1, m_OrehightSeed2,
+            m_OrelikelynessSeed, m_WhichOreSeed);
 
-    // Map size in Tiles
-
-    private enum MapSize{medium,large}
-
-    public static void main(String[] args) {
-        Generator generator = new Generator();
-        print2D(generator.getGroundHight(MapSize.medium));
+    public Generator(World inputWorld, Chunk inputChunk) {
+        HEIGHT = inputChunk.getHEIGHT();
+        WIDTH = inputChunk.getWIDTH();
+        xOff = inputChunk.getM_StartPosition();
+        m_HeightSeed = inputWorld.heightSeed;
+        m_StartPos = inputChunk.getM_StartPosition();
     }
 
-    public static void print2D(int mat[][])
-    {
-        // Loop through all rows
-        for (int i = 0; i < mat.length; i++)
+//    public static void print2D(int[][] mat) {
+//        // Loop through all rows
+//        // Loop through all elements of current row
+//        for (int[] ints : mat)
+//            for (int anInt : ints) System.out.print(anInt + " ");
+//    }
 
-            // Loop through all elements of current row
-            for (int j = 0; j < mat[i].length; j++)
-                System.out.print(mat[i][j] + " ");
+    public int[][][] generate() {
+        int[][][] Map;
+        Map = initMap(m_StartPos);
+        Map = setWater(Map);
+        Map = ores.setOres(Map);
+        // TODO: 08.05.2023 make Generator for Trees
+        // TODO: 08.05.2023 Hardcode Trees (perlinnoise for leaf count)
+        return Map;
     }
 
     /**
      * Returns an int[][] Array with the values on witch PerlinNoise is set to 1,
      * to get a value that saperates air and Ground
-    */
-    public int[][] getGroundHight(MapSize mapSize){
-        int[][] MapArray = new int[0][0];
-        switch (mapSize) {
-            case medium -> {
-                MapArray = new int[World.MAP_MEDIUM_WIDTH][World.MAP_MEDIUM_HIGHT];
-                for (int i = 0; i < World.MAP_MEDIUM_WIDTH; i++) {
-                    float noise = OpenSimplex2.noise2(seed, xOff, 0)*(World.MAP_MEDIUM_HIGHT-150)+50;
-                    //-150 to get min 50 Ground and min 100 to build above
-                    //+50 to get min 50 Ground
-                    int roundedNoise = (int) Math.round(noise);
-                    MapArray[i][roundedNoise]=1;
-                }
+     */
+    public int[][][] initMap(int startPos) {
+        int[][][] MapArray;
+        MapArray = new int[WIDTH][HEIGHT][2];
+        for (int i = startPos; i < WIDTH - 1; i++) {
+            float noise = OpenSimplex2.noise2(m_HeightSeed, xOff, 0) * (HEIGHT - 150) + 50;
+            //-150 to get min 50 Ground and min 100 to build above
+            //+50 to get min 50 Ground
+            int roundedNoise = Math.round(noise);
+            for (int j = roundedNoise; j < HEIGHT - 1; j++) {
+                MapArray[i][j][0] = 1;
             }
-            case large -> {
-                MapArray = new int[World.MAP_LARGE_WIDTH][World.MAP_LARGE_HIGHT];
-                for (int i = 0; i < World.MAP_LARGE_WIDTH; i++) {
-                    float noise = OpenSimplex2.noise2(seed, xOff, 0);
-                    int roundedNoise = (int) Math.round(noise);
-                    MapArray[i][roundedNoise]=1;
-                }
-            }
-        }
-        if(Arrays.deepEquals(MapArray, new int[0][0])){
-            System.err.println("Medium or Large didnt initialize array correctly");
+            System.out.print("ok");
         }
         return MapArray;
     }
-    float noiseValue = OpenSimplex2.noise2(seed, xOff, 0.0);
+
+    public int[][][] setWater(int[][][] Map) {
+        for (int i = 0; i < Map[0].length; i++) {
+            for (int j = Map[1].length / 2; j < Map[1].length; j++) {
+                if (Map[j][i][0] != 1) Map[j][i][0] = 2;
+                else break;
+            }
+        }
+        return Map;
+    }
 
 }
