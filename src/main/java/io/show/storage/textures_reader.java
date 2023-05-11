@@ -1,14 +1,10 @@
 package io.show.storage;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ResourceBundle;
-
-import org.json.*;
 
 public class textures_reader {
     public static void main(String[] args) {
@@ -22,6 +18,7 @@ public class textures_reader {
                 sb.append(line);
                 sb.append(System.lineSeparator());
             }
+
 
             fileContent = sb.toString();
 
