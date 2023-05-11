@@ -1,30 +1,30 @@
 {
   "block": {
     "liquid": {
-      "lava": "block/liquid/lava.bmp",
-      "lava_surface": "block/liquid/lava_surface.bmp",
-      "water": "block/liquid/water.bmp",
-      "water_surface": "block/liquid/water_surface.bmp"
+      "lava": "res/textures/block/liquid/lava.bmp",
+      "lava_surface": "res/textures/block/liquid/lava_surface.bmp",
+      "water": "res/textures/block/liquid/water.bmp",
+      "water_surface": "res/textures/block/liquid/water_surface.bmp"
     },
     "overworld": {
-      "grass_block": "block/overworld/grass_block.bmp",
-      "grass_wall": "block/overworld/grass_wall.bmp",
-      "leaves": "block/overworld/leaves.bmp",
-      "liane_wall": "block/overworld/liane_wall.bmp",
-      "wood": "block/overworld/wood.bmp"
+      "grass_block": "res/textures/block/overworld/grass_block.bmp",
+      "grass_wall": "res/textures/block/overworld/grass_wall.bmp",
+      "leaves": "res/textures/block/overworld/leaves.bmp",
+      "liane_wall": "res/textures/block/overworld/liane_wall.bmp",
+      "wood": "res/textures/block/overworld/wood.bmp"
     },
     "panels": {
-      "wood_panels": "block/panel/wood_panel.bmp"
+      "wood_panels": "res/textures/block/panel/wood_panel.bmp"
     },
     "underworld": {
-      "coal_ore": "block/underworld/coal_ore.bmp",
-      "diamond_ore": "block/underworld/diamond_ore.bmp",
-      "lapis_ore": "block/underworld/lapis_ore.bmp",
-      "stone": "block/underworld/stone.bmp"
+      "coal_ore": "res/textures/block/underworld/coal_ore.bmp",
+      "diamond_ore": "res/textures/block/underworld/diamond_ore.bmp",
+      "lapis_ore": "res/textures/block/underworld/lapis_ore.bmp",
+      "stone": "res/textures/block/underworld/stone.bmp"
     }
   },
   "misc": {
-    "unknown_dark": "misc/unknown_dark.bmp",
-    "unknown_light": "misc/unknown_light.bmp"
+    "unknown_dark": "res/textures/misc/unknown_dark.bmp",
+    "unknown_light": "res/textures/misc/unknown_light.bmp"
   }
 }

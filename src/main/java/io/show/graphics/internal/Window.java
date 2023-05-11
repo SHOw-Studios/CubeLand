@@ -31,7 +31,7 @@ public class Window {
         mWindow = glfwCreateWindow(width, height, title, NULL, NULL);
         if (mWindow == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
+        // Set up a key callback. It will be called every time a key is pressed, repeated or released.
         glfwSetKeyCallback(mWindow, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
@@ -53,9 +53,6 @@ public class Window {
         GL.createCapabilities();
 
         System.out.println(glGetString(GL_VERSION));
-
-        // Set the clear color to pure red
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
     }
 
     /**
