@@ -1,5 +1,5 @@
 {
-  "blocks": {
+  "block": {
     "transparent": "res/shaders/blocks/transparent.shader",
     "opaque": "res/shaders/blocks/opaque.shader",
     "foliage": "res/shaders/blocks/foliage.shader"

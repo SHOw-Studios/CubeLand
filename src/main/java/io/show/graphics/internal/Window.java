@@ -4,13 +4,18 @@ import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
 
-    private final long mWindow;
+    public static interface IListener {
+        void call();
+    }
+
+    private final long m_Handle;
+
+    private IListener m_ResizeListener;
 
     /**
      * Create a new Window object with GLFW and a fresh OpenGL context
@@ -28,22 +33,26 @@ public class Window {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
-        mWindow = glfwCreateWindow(width, height, title, NULL, NULL);
-        if (mWindow == NULL) throw new RuntimeException("Failed to create the GLFW window");
+        m_Handle = glfwCreateWindow(width, height, title, NULL, NULL);
+        if (m_Handle == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
         // Set up a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(mWindow, (window, key, scancode, action, mods) -> {
+        glfwSetKeyCallback(m_Handle, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
+        glfwSetWindowSizeCallback(m_Handle, (window, w, h) -> {
+            glViewport(0, 0, w, h);
+            if (m_ResizeListener != null) m_ResizeListener.call();
+        });
 
         // Make the OpenGL context current
-        glfwMakeContextCurrent(mWindow);
+        glfwMakeContextCurrent(m_Handle);
         // Enable v-sync
         glfwSwapInterval(1);
 
         // Make the window visible
-        glfwShowWindow(mWindow);
+        glfwShowWindow(m_Handle);
 
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -61,7 +70,7 @@ public class Window {
      * @return GLFW window handle
      */
     public final long getHandle() {
-        return mWindow;
+        return m_Handle;
     }
 
     /**
@@ -79,7 +88,7 @@ public class Window {
 
         // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-        glfwSwapBuffers(mWindow); // swap the color buffers
+        glfwSwapBuffers(m_Handle); // swap the color buffers
 
         // Poll for window events. The key callback above will only be
         // invoked during this call.
@@ -87,7 +96,24 @@ public class Window {
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
-        return !glfwWindowShouldClose(mWindow);
+        return !glfwWindowShouldClose(m_Handle);
+    }
+
+    public Window setResizeListener(IListener listener) {
+        m_ResizeListener = listener;
+        return this;
+    }
+
+    public int getWidth() {
+        int[] width = new int[1];
+        glfwGetWindowSize(m_Handle, width, new int[1]);
+        return width[0];
+    }
+
+    public int getHeight() {
+        int[] height = new int[1];
+        glfwGetWindowSize(m_Handle, new int[1], height);
+        return height[0];
     }
 
     /**
@@ -95,7 +121,7 @@ public class Window {
      */
     public void destroy() {
         // Free the window callbacks and destroy the window
-        glfwFreeCallbacks(mWindow);
-        glfwDestroyWindow(mWindow);
+        glfwFreeCallbacks(m_Handle);
+        glfwDestroyWindow(m_Handle);
     }
 }

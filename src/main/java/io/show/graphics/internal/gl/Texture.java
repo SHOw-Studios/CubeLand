@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
 
 public class Texture {
@@ -29,7 +30,19 @@ public class Texture {
         return this;
     }
 
+    public Texture bind(int i) {
+        glActiveTexture(i);
+        glBindTexture(GL_TEXTURE_2D, m_Handle);
+        return this;
+    }
+
     public Texture unbind() {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return this;
+    }
+
+    public Texture unbind(int i) {
+        glActiveTexture(i);
         glBindTexture(GL_TEXTURE_2D, 0);
         return this;
     }

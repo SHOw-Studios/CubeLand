@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Vector;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
@@ -63,10 +64,11 @@ public class VertexArray {
         for (int i = 0; i < layout.parameterList.size(); i++) {
             Layout.Parameter parameter = layout.parameterList.get(i);
 
-            int size = Layout.sizeof(parameter.type) * parameter.count;
+            int size = Layout.sizeof(parameter.type);
+            glEnableVertexAttribArray(i);
             glVertexAttribPointer(i, size, parameter.type, parameter.normalized, layout.stride, pointer);
 
-            pointer += size;
+            pointer += size * parameter.count;
         }
         buffer.unbind();
 
