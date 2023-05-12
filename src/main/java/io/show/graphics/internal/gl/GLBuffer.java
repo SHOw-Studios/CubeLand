@@ -34,6 +34,11 @@ public class GLBuffer {
         return this;
     }
 
+    public GLBuffer setSize(int size) {
+        glBufferData(m_Target, size, m_Usage);
+        return this;
+    }
+
     public GLBuffer setData(ByteBuffer buffer) {
         glBufferData(m_Target, buffer, m_Usage);
         return this;

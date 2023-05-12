@@ -1,7 +1,8 @@
 package io.show.graphics.internal.gl;
 
-import io.show.storage.StringListReader;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,20 +35,22 @@ public class Shader {
     private int m_Handle;
     private Map<String, Integer> m_Uniforms;
 
-    public Shader(String path) throws CompileStatusException, LinkStatusException, ValidateStatusException {
+    public Shader(String path) throws CompileStatusException, LinkStatusException, ValidateStatusException, IOException {
         m_Uniforms = new HashMap<>();
         compile(parseShaderFile(path));
     }
 
-    public void bind() {
+    public Shader bind() {
         glUseProgram(m_Handle);
+        return this;
     }
 
-    public void unbind() {
+    public Shader unbind() {
         glUseProgram(0);
+        return this;
     }
 
-    public void compile(List<ShaderData> shaderDataList) throws CompileStatusException, LinkStatusException, ValidateStatusException {
+    public Shader compile(List<ShaderData> shaderDataList) throws CompileStatusException, LinkStatusException, ValidateStatusException {
         if (m_Handle != 0) glDeleteProgram(m_Handle);
         m_Handle = glCreateProgram();
 
@@ -71,6 +74,8 @@ public class Shader {
         glValidateProgram(m_Handle);
         final int validated = glGetProgrami(m_Handle, GL_VALIDATE_STATUS);
         if (validated != GL_TRUE) throw new ValidateStatusException(glGetProgramInfoLog(m_Handle));
+
+        return this;
     }
 
     public int getLocation(String id) {
@@ -78,93 +83,113 @@ public class Shader {
         return m_Uniforms.get(id);
     }
 
-    public void setUniformFloat(String id, float... v) {
+    public Shader setUniformFloat(String id, float... v) {
         switch (v.length) {
             case 1:
                 glUniform1fv(getLocation(id), v);
+                break;
             case 2:
                 glUniform2fv(getLocation(id), v);
+                break;
             case 3:
                 glUniform3fv(getLocation(id), v);
+                break;
             case 4:
                 glUniform4fv(getLocation(id), v);
+                break;
 
-            case 0:
             default:
                 throw new RuntimeException("undefined for array of length " + v.length);
         }
+
+        return this;
     }
 
-    public void setUniformInt(String id, int... v) {
+    public Shader setUniformInt(String id, int... v) {
         switch (v.length) {
             case 1:
                 glUniform1iv(getLocation(id), v);
+                break;
             case 2:
                 glUniform2iv(getLocation(id), v);
+                break;
             case 3:
                 glUniform3iv(getLocation(id), v);
+                break;
             case 4:
                 glUniform4iv(getLocation(id), v);
 
-            case 0:
             default:
                 throw new RuntimeException("undefined for array of length " + v.length);
         }
+
+        return this;
     }
 
-    public void setUniformFloatMat4(String id, float[] v) {
+    public Shader setUniformFloatMat4(String id, float[] v) {
         glUniformMatrix4fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat4x3(String id, float[] v) {
+    public Shader setUniformFloatMat4x3(String id, float[] v) {
         glUniformMatrix4x3fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat4x2(String id, float[] v) {
+    public Shader setUniformFloatMat4x2(String id, float[] v) {
         glUniformMatrix4x2fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat3(String id, float[] v) {
+    public Shader setUniformFloatMat3(String id, float[] v) {
         glUniformMatrix3fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat3x4(String id, float[] v) {
+    public Shader setUniformFloatMat3x4(String id, float[] v) {
         glUniformMatrix3x4fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat3x2(String id, float[] v) {
+    public Shader setUniformFloatMat3x2(String id, float[] v) {
         glUniformMatrix3x2fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat2(String id, float[] v) {
+    public Shader setUniformFloatMat2(String id, float[] v) {
         glUniformMatrix2fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat2x4(String id, float[] v) {
+    public Shader setUniformFloatMat2x4(String id, float[] v) {
         glUniformMatrix2x4fv(getLocation(id), false, v);
+        return this;
     }
 
-    public void setUniformFloatMat2x3(String id, float[] v) {
+    public Shader setUniformFloatMat2x3(String id, float[] v) {
         glUniformMatrix2x3fv(getLocation(id), false, v);
+        return this;
     }
 
     public record ShaderData(int type, String source, String identifier) {
     }
 
-    public static List<ShaderData> parseShaderFile(String path) {
+    public static List<ShaderData> parseShaderFile(String path) throws IOException {
         List<ShaderData> shaderDataList = new Vector<>();
 
-        List<String> source = StringListReader.read(path);
+        BufferedReader reader = new BufferedReader(new FileReader(path));
 
         StringBuilder src = null;
         String identifier = null;
         int type = -1;
 
-        for (int i = 0; i < source.size(); i++) {
-            String line = source.get(i);
+        String line;
+        int i = 0;
+        while ((line = reader.readLine()) != null) {
+            i++;
             String[] args = line.split(" ");
-            if (args[0] == "#") {
-                if (args[1] != "shader") continue;
+            if (args[0].equals("#")) {
+                if (!args[1].equals("shader")) continue;
                 if (src != null) shaderDataList.add(new ShaderData(type, src.toString(), identifier));
 
                 type = switch (args[2]) {
@@ -176,6 +201,8 @@ public class Shader {
                 };
                 identifier = args[3];
                 src = new StringBuilder();
+
+                continue;
             }
 
             if (src == null) continue;
@@ -184,6 +211,8 @@ public class Shader {
         }
 
         if (src != null) shaderDataList.add(new ShaderData(type, src.toString(), identifier));
+
+        reader.close();
 
         return shaderDataList;
     }

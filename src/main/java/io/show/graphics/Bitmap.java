@@ -27,9 +27,9 @@ public class Bitmap {
         this(new int[width * height], width, height, 1.0f);
     }
 
-    public Bitmap(int width, int height, int fillcolor, float opacity) {
+    public Bitmap(int width, int height, int fillColor, float opacity) {
         m_Data = new int[width * height];
-        Arrays.fill(m_Data, fillcolor);
+        Arrays.fill(m_Data, fillColor);
         m_Width = width;
         m_Height = height;
         m_Opacity = opacity;
@@ -91,4 +91,19 @@ public class Bitmap {
         return m_Data[x + y * m_Width];
     }
 
+    public int[] getData() {
+        return m_Data;
+    }
+
+    public byte[] getDataAsByteArray() {
+        byte[] bytes = new byte[m_Data.length * 4];
+        for (int i = 0; i < m_Data.length; i++) {
+            int idx = i * 4;
+            bytes[idx] = (byte) ((m_Data[i] >> 16) & 0xff);
+            bytes[idx + 1] = (byte) ((m_Data[i] >> 8) & 0xff);
+            bytes[idx + 2] = (byte) ((m_Data[i]) & 0xff);
+            bytes[idx + 3] = (byte) ((m_Data[i] >> 24) & 0xff);
+        }
+        return bytes;
+    }
 }

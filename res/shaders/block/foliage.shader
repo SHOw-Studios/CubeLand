@@ -1,7 +1,7 @@
-# shader foliage_vert
+# shader vertex foliage_vert
 #version 330 core
 
-layout (location = 0) in vec4 position;
+layout (location = 0) in vec2 position;
 layout (location = 1) in vec4 color;
 
 out vec4 v_Color;
@@ -12,7 +12,7 @@ void main()
     v_Color = color;
 }
 
-# shader foliage_frag
+# shader fragment foliage_frag
 #version 330 core
 
 layout (location = 0) out vec4 color;
