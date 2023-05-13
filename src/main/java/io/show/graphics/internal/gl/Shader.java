@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL21.*;
 import static org.lwjgl.opengl.GL43.GL_COMPUTE_SHADER;
 
-public class Shader {
+public class Shader implements AutoCloseable {
 
     public static class CompileStatusException extends Exception {
         public CompileStatusException(String message) {
@@ -169,6 +169,11 @@ public class Shader {
     public Shader setUniformFloatMat2x3(String id, float[] v) {
         glUniformMatrix2x3fv(getLocation(id), false, v);
         return this;
+    }
+
+    @Override
+    public void close() {
+        glDeleteProgram(m_Handle);
     }
 
     public record ShaderData(int type, String source, String identifier) {

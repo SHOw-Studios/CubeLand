@@ -6,12 +6,15 @@ import io.show.graphics.internal.scene.Material;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL43.*;
+import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT;
+import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT_SYNCHRONOUS;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Renderer {
 
-    public static void debug() {
+    public static void enableDebug() {
         glDebugMessageCallback((source, type, id, severity, length, message, userParam) -> {
 
             String _source = switch (source) {
@@ -50,6 +53,14 @@ public class Renderer {
             }
 
         }, NULL);
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    }
+
+    public static void disableDebug() {
+        glDisable(GL_DEBUG_OUTPUT);
+        glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(null, NULL);
     }
 
     public static void render(VertexArray vertexArray, GLBuffer indexBuffer, Material material) {

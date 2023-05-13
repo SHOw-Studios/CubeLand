@@ -4,13 +4,12 @@ import io.show.graphics.internal.Renderer;
 import io.show.graphics.internal.Window;
 import io.show.graphics.internal.gl.GLBuffer;
 import io.show.graphics.internal.gl.Shader;
-import io.show.graphics.internal.gl.Texture;
+import io.show.graphics.internal.gl.TextureAtlas;
 import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
 import org.joml.Matrix4f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GLUtil;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -21,30 +20,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT;
-import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT_SYNCHRONOUS;
 
 public class Graphics {
 
-    private static Window window;
-    private static Material material;
-
     public static void main(String[] args) {
 
-        init();
-
-        window = new Window(300, 300, "Hello World");
-        GLUtil.setupDebugMessageCallback();
-
-        Renderer.debug();
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-
-        registerBitmap(0, new Bitmap(16, 16, 0xff00ff, 0.0f));
-        registerBitmap(1, new Bitmap(16, 16, 0x888888, 1.0f));
-        registerBitmap(2, new Bitmap(16, 16, 0x883322, 1.0f));
+        Graphics g = Graphics.getInstance();
 
         VertexArray vertexArray = new VertexArray();
 
@@ -71,43 +53,107 @@ public class Graphics {
             throw new RuntimeException(e);
         }
 
-        Bitmap bitmap = null;
+        String[] textures = new String[]{
+
+                "res/textures/block/liquid/lava.bmp",
+
+                "res/textures/block/liquid/lava_surface.bmp",
+
+                "res/textures/block/liquid/water.bmp",
+
+                "res/textures/block/liquid/water_surface.bmp",
+
+                "res/textures/block/overworld/grass_block.bmp",
+
+                "res/textures/block/overworld/grass_wall.bmp",
+
+                "res/textures/block/overworld/leaves.bmp",
+
+                "res/textures/block/overworld/liane_wall.bmp",
+
+                "res/textures/block/overworld/wood.bmp",
+
+                "res/textures/block/panel/wood_panel.bmp",
+
+                "res/textures/block/underworld/coal_ore.bmp",
+
+                "res/textures/block/underworld/diamond_ore.bmp",
+
+                "res/textures/block/underworld/lapis_ore.bmp",
+
+                "res/textures/block/underworld/stone.bmp",
+
+        };
+
         try {
-            bitmap = new Bitmap(ImageIO.read(new File("res/textures/block/overworld/grass_block.bmp")));
+            long id = 0;
+            for (String path : textures)
+                g.registerBitmap(id++, new Bitmap(ImageIO.read(new File(path))));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        buffer = ByteBuffer.allocateDirect(bitmap.getData().length * Integer.BYTES).order(ByteOrder.nativeOrder());
-        buffer.put(bitmap.getDataAsByteArray());
-        buffer.position(0);
+        g.generateTextureAtlas(16, 16);
 
-        Texture texture = new Texture().bind().setDefaultParameters().setData(bitmap.getWidth(), bitmap.getHeight(), buffer).unbind();
-        material = new Material(shader).addTexture(texture);
+        g.setMaterial(new Material(shader).addTexture(g.getAtlas().getTexture()));
 
-        shader.bind().setUniformInt("sampler", 0).unbind();
-        windowresize();
-
-        window.setResizeListener(Graphics::windowresize);
-
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        while (window.loopOnce()) {
-            glClear(GL_COLOR_BUFFER_BIT);
-            Renderer.render(vertexArray, indexBuffer, material);
-        }
-        window.destroy();
-
-        terminate();
-    }
-
-    private static void windowresize() {
+        Window window = g.getWindow();
         float w = window.getWidth();
         float h = window.getHeight();
         float a = w / h;
         Matrix4f mat = new Matrix4f().ortho2D(-a, a, -1.0f, 1.0f);
-        material.getShader().bind().setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
+
+        shader.bind().setUniformInt("sampler", 0).setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
+
+        while (g.loopOnce(vertexArray, indexBuffer)) {
+        }
+
+        g.destroy();
     }
 
-    private static final Map<Long, Bitmap> bitmaps = new HashMap<>();
+    private static Graphics __instance;
+
+    /**
+     * This singleton method either returns the current singleton instance of the Graphics class or, if not yet done, creates one and returns it.
+     *
+     * @return the Graphics instance
+     */
+    public static Graphics getInstance() {
+        if (__instance == null) __instance = new Graphics();
+        return __instance;
+    }
+
+    private Window m_Window;
+    private Material m_Material;
+    private final Map<Long, Bitmap> m_BitmapMap = new HashMap<>();
+    private TextureAtlas m_Atlas;
+
+    /**
+     * <p>Initializes GLFW and sets up the error callback to write to the system error stream.</p>
+     * <p>After that it sets up the window for this new application.</p>
+     */
+    private Graphics() {
+
+        // Print out the currently used LWJGL version
+        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
+
+        // Set up an error callback. The default implementation
+        // will print the error message in System.err.
+        GLFWErrorCallback.createPrint(System.err).set();
+
+        // Initialize GLFW. Most GLFW functions will not work before doing this.
+        if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
+
+        m_Window = new Window(800, 600, "CubeLand v1.0.0");
+        m_Window.setResizeListener(this::onWindowResize);
+    }
+
+    private void onWindowResize() {
+        float w = m_Window.getWidth();
+        float h = m_Window.getHeight();
+        float a = w / h;
+        Matrix4f mat = new Matrix4f().ortho2D(-a, a, -1.0f, 1.0f);
+        m_Material.getShader().bind().setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
+    }
 
     /**
      * Registers a single bitmap with a unique identifier and returns if the operation was successfully.
@@ -119,42 +165,67 @@ public class Graphics {
      * @param bitmap the bitmap to be registered
      * @return true if there was no bitmap registered with this id before
      */
-    public static boolean registerBitmap(long id, Bitmap bitmap) {
-        return bitmaps.putIfAbsent(id, bitmap) == null;
+    public boolean registerBitmap(long id, Bitmap bitmap) {
+        return m_BitmapMap.putIfAbsent(id, bitmap) == null;
+    }
+
+    public Graphics generateTextureAtlas(int tileW, int tileH) {
+
+        int tilesEdgeNum = (int) Math.ceil(Math.sqrt(m_BitmapMap.size()));
+        var bitmaps = m_BitmapMap.values().stream().toList();
+
+        ByteBuffer buffer = ByteBuffer.allocateDirect(tileW * tileH * 4).order(ByteOrder.nativeOrder());
+        TextureAtlas atlas = new TextureAtlas(tileW, tileH, tilesEdgeNum, tilesEdgeNum).bind();
+
+        for (int i = 0; i < bitmaps.size(); i++) {
+            final int x = i % tilesEdgeNum;
+            final int y = (i - x) / tilesEdgeNum;
+
+            byte[] data = bitmaps.get(i).getDataAsByteArray();
+
+            atlas.setTile(x, y, buffer.clear().put(data).position(0));
+        }
+
+        m_Atlas = atlas.unbind();
+
+        return this;
+    }
+
+    public Graphics setMaterial(Material material) {
+        m_Material = material;
+        return this;
+    }
+
+    public Window getWindow() {
+        return m_Window;
+    }
+
+    public TextureAtlas getAtlas() {
+        return m_Atlas;
+    }
+
+    public boolean loopOnce(VertexArray vertexArray, GLBuffer indexBuffer) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        Renderer.render(vertexArray, indexBuffer, m_Material);
+
+        return m_Window.loopOnce();
     }
 
     /**
-     * Initializes GLFW and sets up the error callback to write to the system error stream
+     * Destroys the window object, terminates GLFW and frees the error callback
      */
-    public static void init() {
+    public void destroy() {
+        // Destroy the window
+        m_Window.close();
+        m_Material.close();
+        m_Atlas.close();
 
-        // Print out the currently used LWJGL version
-        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
-
-        // Set up an error callback. The default implementation
-        // will print the error message in System.err.
-        GLFWErrorCallback.createPrint(System.err).set();
-
-        // Initialize GLFW. Most GLFW functions will not work before doing this.
-        if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
-    }
-
-    public static boolean applyTextures() {
-
-        bitmaps.forEach((id, bitmap) -> {
-        });
-
-        return false;
-    }
-
-    /**
-     * Terminates GLFW and clears the error callback
-     */
-    public static void terminate() {
-
-        // Terminate GLFW and free the error callback
+        // Terminate GLFW
         glfwTerminate();
-        glfwSetErrorCallback(null).free();
-    }
 
+        // Free the error callback
+        GLFWErrorCallback callback = glfwSetErrorCallback(null);
+        // Check if it already has been freed
+        if (callback != null) callback.free();
+    }
 }

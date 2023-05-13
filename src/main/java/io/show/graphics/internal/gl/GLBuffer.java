@@ -4,11 +4,11 @@ import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL15.*;
 
-public class GLBuffer {
+public class GLBuffer implements AutoCloseable {
 
-    protected final int m_Handle;
-    protected int m_Target;
-    protected int m_Usage;
+    private final int m_Handle;
+    private int m_Target;
+    private int m_Usage;
 
     public GLBuffer() {
         m_Handle = glGenBuffers();
@@ -46,5 +46,10 @@ public class GLBuffer {
 
     public int getSize() {
         return glGetBufferParameteri(m_Target, GL_BUFFER_SIZE);
+    }
+
+    @Override
+    public void close() {
+        glDeleteBuffers(m_Handle);
     }
 }
