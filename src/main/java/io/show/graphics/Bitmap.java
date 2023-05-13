@@ -99,10 +99,10 @@ public class Bitmap {
         byte[] bytes = new byte[m_Data.length * 4];
         for (int i = 0; i < m_Data.length; i++) {
             int idx = i * 4;
-            bytes[idx] = (byte) ((m_Data[i] >> 16) & 0xff);
-            bytes[idx + 1] = (byte) ((m_Data[i] >> 8) & 0xff);
-            bytes[idx + 2] = (byte) ((m_Data[i]) & 0xff);
-            bytes[idx + 3] = (byte) ((m_Data[i] >> 24) & 0xff);
+            bytes[idx] = (byte) (m_Data[i] >>> 16);     // R
+            bytes[idx + 1] = (byte) (m_Data[i] >>> 8);  // G
+            bytes[idx + 2] = (byte) (m_Data[i]);        // B
+            bytes[idx + 3] = (byte) (m_Data[i] >>> 24); // A
         }
         return bytes;
     }

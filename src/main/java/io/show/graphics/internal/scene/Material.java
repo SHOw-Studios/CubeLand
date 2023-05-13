@@ -8,7 +8,7 @@ import java.util.Vector;
 
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 
-public class Material {
+public class Material implements AutoCloseable {
 
     private final Shader m_Shader;
     private final List<Texture> m_Textures;
@@ -49,5 +49,11 @@ public class Material {
 
     public List<Texture> getTextures() {
         return m_Textures;
+    }
+
+    @Override
+    public void close() {
+        m_Shader.close();
+        m_Textures.forEach(Texture::close);
     }
 }

@@ -29,5 +29,5 @@ uniform sampler2D sampler;
 
 void main()
 {
-    color = vec4((texture(sampler, v_Coords) * v_Color).rgb, 1.0);
+    color = vec4((texture(sampler, v_Coords)/* * v_Color*/).rgb, 1.0);
 }
