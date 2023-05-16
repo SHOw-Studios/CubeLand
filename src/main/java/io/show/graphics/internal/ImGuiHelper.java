@@ -1,5 +1,6 @@
 package io.show.graphics.internal;
 
+import imgui.ImFont;
 import imgui.ImGui;
 import imgui.extension.implot.ImPlot;
 import imgui.flag.ImGuiConfigFlags;
@@ -7,6 +8,9 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import org.lwjgl.glfw.GLFW;
 
+/**
+ * @author Felix Schreiber
+ */
 public class ImGuiHelper implements AutoCloseable {
 
     private final ImGuiImplGlfw m_ImGuiImplGlfw = new ImGuiImplGlfw();
@@ -37,6 +41,20 @@ public class ImGuiHelper implements AutoCloseable {
             ImGui.renderPlatformWindowsDefault();
             GLFW.glfwMakeContextCurrent(backupPtr);
         }
+    }
+
+    public ImFont addFont(String path, float pixelSize) {
+        return ImGui.getIO().getFonts().addFontFromFileTTF(path, pixelSize);
+    }
+
+    public ImFont setDefaultFont(String path, float pixelSize) {
+        ImFont font = addFont(path, pixelSize);
+        ImGui.getIO().setFontDefault(font);
+        return font;
+    }
+
+    public void updateFonts() {
+        m_ImGuiImplGl3.updateFontsTexture();
     }
 
     @Override

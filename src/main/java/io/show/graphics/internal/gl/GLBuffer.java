@@ -5,6 +5,9 @@ import java.nio.ByteBuffer;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
 
+/**
+ * @author Felix Schreiber
+ */
 public class GLBuffer implements AutoCloseable {
 
     private final int m_Handle;

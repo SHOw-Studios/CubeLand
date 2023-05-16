@@ -12,6 +12,9 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL21.*;
 import static org.lwjgl.opengl.GL43.GL_COMPUTE_SHADER;
 
+/**
+ * @author Felix Schreiber
+ */
 public class Shader implements AutoCloseable {
 
     public static class CompileStatusException extends Exception {
