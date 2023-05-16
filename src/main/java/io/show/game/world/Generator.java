@@ -38,8 +38,6 @@ public class Generator {
         Map = initMap(m_StartPos);
         Map = setWater(Map);
         Map = ores.setOres(Map);
-        // TODO: 08.05.2023 make Generator for Trees
-        // TODO: 08.05.2023 Hardcode Trees (perlinnoise for leaf count)
         return Map;
     }
 
