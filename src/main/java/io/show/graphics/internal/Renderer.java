@@ -14,6 +14,9 @@ import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT;
 import static org.lwjgl.opengl.GL43C.GL_DEBUG_OUTPUT_SYNCHRONOUS;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * @author Felix Schreiber
+ */
 public class Renderer {
 
     public static void enableDebug() {

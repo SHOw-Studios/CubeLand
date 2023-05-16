@@ -8,6 +8,9 @@ import java.util.Vector;
 
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 
+/**
+ * @author Felix Schreiber
+ */
 public class Material implements AutoCloseable {
 
     private final Shader m_Shader;

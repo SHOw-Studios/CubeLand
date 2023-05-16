@@ -7,6 +7,9 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL30.*;
 
+/**
+ * @author Felix Schreiber
+ */
 public class VertexArray implements AutoCloseable {
 
     public static class Layout {

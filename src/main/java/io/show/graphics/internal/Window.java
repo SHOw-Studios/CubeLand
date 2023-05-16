@@ -9,6 +9,9 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * @author Felix Schreiber
+ */
 public class Window implements AutoCloseable {
 
     public interface IListener {
@@ -18,9 +21,14 @@ public class Window implements AutoCloseable {
     public record Rect(int x, int y, int width, int height) {
     }
 
+    public enum Mode {
+        WINDOWED, FULLSCREEN, FULLSCREEN_WINDOWED
+    }
+
     private final long m_Handle;
     private IListener m_ResizeListener;
     private Rect m_PreviousState;
+    private Mode m_CurrentMode;
 
     /**
      * Create a new Window object with GLFW and a fresh OpenGL context
@@ -47,7 +55,7 @@ public class Window implements AutoCloseable {
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
 
             if (key == GLFW_KEY_F11 && action == GLFW_RELEASE)
-                toggleFullscreenMode(); // toggle fullscreen mode if f11 key is pressed
+                toggleFullscreenMode(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS); // toggle fullscreen mode if f11 key is pressed
         });
         // Set up a resize callback, it will be called every time the window size changes
         glfwSetWindowSizeCallback(m_Handle, (window, w, h) -> {
@@ -62,6 +70,8 @@ public class Window implements AutoCloseable {
 
         // Make the window visible
         glfwShowWindow(m_Handle);
+
+        m_CurrentMode = Mode.WINDOWED;
 
         // OpenGL Stuff //
 
@@ -122,10 +132,18 @@ public class Window implements AutoCloseable {
         return this;
     }
 
-    public Window toggleFullscreenMode() {
+    public Window toggleFullscreenMode(boolean fullscreenWindowed) {
 
         long monitor = glfwGetWindowMonitor(m_Handle);
-        if (monitor == NULL) { // find the closest monitor and toggle into fullscreen mode
+        if (monitor != NULL || m_CurrentMode == Mode.FULLSCREEN_WINDOWED) {
+
+            if (m_PreviousState == null) throw new NullPointerException("previous state is null; might be a bug");
+
+            glfwSetWindowMonitor(m_Handle, NULL, m_PreviousState.x(), m_PreviousState.y(), m_PreviousState.width(), m_PreviousState.height(), GLFW_DONT_CARE);
+
+            m_CurrentMode = Mode.WINDOWED;
+
+        } else {
 
             monitor = getCurrentMonitor();
             if (monitor == NULL) {
@@ -140,11 +158,9 @@ public class Window implements AutoCloseable {
 
             m_PreviousState = getCurrentState();
 
-            glfwSetWindowMonitor(m_Handle, monitor, mx[0], my[0], vidMode.width(), vidMode.height(), vidMode.refreshRate());
-        } else {
-            if (m_PreviousState == null) throw new NullPointerException("previous state is null; might be a bug");
+            glfwSetWindowMonitor(m_Handle, fullscreenWindowed ? NULL : monitor, mx[0], my[0], vidMode.width(), vidMode.height(), vidMode.refreshRate());
 
-            glfwSetWindowMonitor(m_Handle, 0, m_PreviousState.x(), m_PreviousState.y(), m_PreviousState.width(), m_PreviousState.height(), GLFW_DONT_CARE);
+            m_CurrentMode = fullscreenWindowed ? Mode.FULLSCREEN_WINDOWED : Mode.FULLSCREEN;
         }
 
         return this;

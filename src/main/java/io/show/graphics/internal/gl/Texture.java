@@ -9,6 +9,9 @@ import static org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
 
+/**
+ * @author Felix Schreiber
+ */
 public class Texture implements AutoCloseable {
 
     private final int m_Handle;

@@ -5,6 +5,9 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * @author Felix Schreiber
+ */
 public class TextureAtlas implements AutoCloseable {
 
     private final Texture m_Texture;
