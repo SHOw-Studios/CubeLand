@@ -13,6 +13,10 @@ public class World {
     public final long orehightSeed1 = m_Random.nextLong();
     public final long orehightSeed2 = m_Random.nextLong();
     public final long whichOreSeed = m_Random.nextLong();
+    public final long treeHeightSeed = m_Random.nextLong();
+    public final long treeLikelinessSeed = m_Random.nextLong();
+    public final long noodleSeed = m_Random.nextLong();
+    public final long cheeseSeed = m_Random.nextLong();
     public List<Chunk> Map = new Vector<>();
 
     enum Mapsize {LARGE, MEDIUM}
