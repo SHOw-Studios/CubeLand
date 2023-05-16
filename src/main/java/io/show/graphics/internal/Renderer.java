@@ -5,6 +5,8 @@ import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 
+import java.nio.IntBuffer;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL43.*;
@@ -55,6 +57,8 @@ public class Renderer {
         }, NULL);
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+        glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_NOTIFICATION, (IntBuffer) null, false);
     }
 
     public static void disableDebug() {

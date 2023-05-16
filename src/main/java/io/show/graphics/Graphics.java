@@ -1,5 +1,9 @@
 package io.show.graphics;
 
+import imgui.ImGui;
+import imgui.extension.implot.ImPlot;
+import imgui.flag.ImGuiDockNodeFlags;
+import io.show.graphics.internal.ImGuiHelper;
 import io.show.graphics.internal.Renderer;
 import io.show.graphics.internal.Window;
 import io.show.graphics.internal.gl.GLBuffer;
@@ -7,6 +11,7 @@ import io.show.graphics.internal.gl.Shader;
 import io.show.graphics.internal.gl.TextureAtlas;
 import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
+import org.joml.Math;
 import org.joml.Matrix4f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -26,34 +31,28 @@ public class Graphics {
 
     public static void main(String[] args) {
 
-        Graphics g = Graphics.getInstance();
+        final Graphics g = Graphics.getInstance();
 
-        VertexArray vertexArray = new VertexArray();
+        g.registerGraph(0, (x) -> x * x);
+        g.registerGraph(1, (x) -> (float) Math.sqrt(1.0f - x * x));
+        g.registerGraph(2, (x) -> (float) -Math.sqrt(1.0f - x * x));
 
-        int[] indices = new int[]{0, 1, 2, 2, 3, 0};
+        final VertexArray vertexArray = new VertexArray();
+
+        final int[] indices = new int[]{0, 1, 2, 2, 3, 0};
         ByteBuffer buffer = ByteBuffer.allocateDirect(indices.length * Integer.BYTES).order(ByteOrder.nativeOrder());
         buffer.asIntBuffer().put(indices);
-        buffer.position(0);
-        GLBuffer indexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setSize(indices.length * Integer.BYTES).setData(buffer).unbind();
+        GLBuffer indexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
 
-        float[] vertices = new float[]{-0.5f, -0.5f, 0, 0, 0, 0, 0, 1, -0.5f, 0.5f, 0, 1, 0, 1, 0, 1, 0.5f, 0.5f, 1, 1, 1, 1, 0, 1, 0.5f, -0.5f, 1, 0, 1, 0, 0, 1};
+        final float[] vertices = new float[]{-0.5f, -0.5f, 0, 0, 0, 0, 0, 1, -0.5f, 0.5f, 0, 1, 0, 1, 0, 1, 0.5f, 0.5f, 1, 1, 1, 1, 0, 1, 0.5f, -0.5f, 1, 0, 1, 0, 0, 1};
         buffer = ByteBuffer.allocateDirect(vertices.length * Float.BYTES).order(ByteOrder.nativeOrder());
         buffer.asFloatBuffer().put(vertices);
-        buffer.position(0);
-        GLBuffer vertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setSize(vertices.length * Float.BYTES).setData(buffer).unbind();
+        GLBuffer vertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
 
-        VertexArray.Layout layout = new VertexArray.Layout().pushFloat(2).pushFloat(2).pushFloat(4);
+        final VertexArray.Layout layout = new VertexArray.Layout().pushFloat(2).pushFloat(2).pushFloat(4);
         vertexArray.bind().bindBuffer(vertexBuffer, layout).unbind();
 
-        Shader shader = null;
-        try {
-            shader = new Shader("res/shaders/block/opaque.shader");
-        } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
-                 IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        String[] textures = new String[]{
+        final String[] textures = new String[]{
 
                 "res/textures/block/liquid/lava.bmp",
 
@@ -93,16 +92,15 @@ public class Graphics {
             throw new RuntimeException(e);
         }
         g.generateTextureAtlas(16, 16);
+        g.getMaterial().addTexture(g.getAtlas().getTexture());
 
-        g.setMaterial(new Material(shader).addTexture(g.getAtlas().getTexture()));
-
-        Window window = g.getWindow();
+        final Window window = g.getWindow();
         float w = window.getWidth();
         float h = window.getHeight();
         float a = w / h;
-        Matrix4f mat = new Matrix4f().ortho2D(-a, a, -1.0f, 1.0f);
+        final Matrix4f mat = new Matrix4f().ortho2D(-a, a, -1.0f, 1.0f);
 
-        shader.bind().setUniformInt("sampler", 0).setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
+        g.getMaterial().getShader().bind().setUniformInt("sampler", 0).setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
 
         while (g.loopOnce(vertexArray, indexBuffer)) {
         }
@@ -122,10 +120,19 @@ public class Graphics {
         return __instance;
     }
 
-    private Window m_Window;
-    private Material m_Material;
+    public interface Graph {
+        float at(float x);
+    }
+
+    private final Window m_Window;
+
+    private final Material m_Material;
     private final Map<Long, Bitmap> m_BitmapMap = new HashMap<>();
     private TextureAtlas m_Atlas;
+
+    private final Map<Long, Graph> m_GraphMap = new HashMap<>();
+
+    private final ImGuiHelper m_ImGuiHelper;
 
     /**
      * <p>Initializes GLFW and sets up the error callback to write to the system error stream.</p>
@@ -145,6 +152,15 @@ public class Graphics {
 
         m_Window = new Window(800, 600, "CubeLand v1.0.0");
         m_Window.setResizeListener(this::onWindowResize);
+
+        try {
+            m_Material = new Material(new Shader("res/shaders/block/opaque.shader"));
+        } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
+                 IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        m_ImGuiHelper = new ImGuiHelper(m_Window.getHandle(), "#version 130");
     }
 
     private void onWindowResize() {
@@ -169,6 +185,10 @@ public class Graphics {
         return m_BitmapMap.putIfAbsent(id, bitmap) == null;
     }
 
+    public boolean registerGraph(long id, Graph graph) {
+        return m_GraphMap.putIfAbsent(id, graph) == null;
+    }
+
     public Graphics generateTextureAtlas(int tileW, int tileH) {
 
         int tilesEdgeNum = (int) Math.ceil(Math.sqrt(m_BitmapMap.size()));
@@ -191,13 +211,12 @@ public class Graphics {
         return this;
     }
 
-    public Graphics setMaterial(Material material) {
-        m_Material = material;
-        return this;
-    }
-
     public Window getWindow() {
         return m_Window;
+    }
+
+    public Material getMaterial() {
+        return m_Material;
     }
 
     public TextureAtlas getAtlas() {
@@ -205,8 +224,48 @@ public class Graphics {
     }
 
     public boolean loopOnce(VertexArray vertexArray, GLBuffer indexBuffer) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glDisable(GL_CULL_FACE);
+
         Renderer.render(vertexArray, indexBuffer, m_Material);
+
+        m_ImGuiHelper.loopOnce(() -> {
+
+            ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+
+            ImGui.begin("Hello World!");
+            if (ImPlot.beginPlot("My Plot")) {
+                ImPlot.plotLine("My Line", new Float[]{0.0f, 1.0f}, new Float[]{0.0f, 1.0f});
+                ImPlot.endPlot();
+            }
+            ImGui.end();
+
+            final int res = 100;
+            final float invRes = 1.0f / (res - 1.0f);
+            m_GraphMap.forEach((id, graph) -> {
+                ImGui.begin("Graph #" + id);
+                if (ImPlot.beginPlot("Plot #" + id)) {
+                    final Float[] xa = new Float[res];
+                    final Float[] ya = new Float[res];
+
+                    for (int i = 0; i < res; i++) {
+                        final float x = invRes * i;
+                        final float y = graph.at(x);
+                        xa[i] = x;
+                        ya[i] = y;
+                    }
+
+                    ImPlot.plotLine("Graph", xa, ya);
+                    ImPlot.endPlot();
+                }
+                ImGui.end();
+            });
+
+            ImGui.showDemoWindow();
+        });
 
         return m_Window.loopOnce();
     }
@@ -219,6 +278,7 @@ public class Graphics {
         m_Window.close();
         m_Material.close();
         m_Atlas.close();
+        m_ImGuiHelper.close();
 
         // Terminate GLFW
         glfwTerminate();

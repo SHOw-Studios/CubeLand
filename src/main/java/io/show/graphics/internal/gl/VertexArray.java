@@ -5,7 +5,6 @@ import java.util.Vector;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
 public class VertexArray implements AutoCloseable {
@@ -63,11 +62,11 @@ public class VertexArray implements AutoCloseable {
         for (int i = 0; i < layout.parameterList.size(); i++) {
             Layout.Parameter parameter = layout.parameterList.get(i);
 
-            int size = Layout.sizeof(parameter.type);
+            int size = Layout.sizeof(parameter.type());
             glEnableVertexAttribArray(i);
-            glVertexAttribPointer(i, size, parameter.type, parameter.normalized, layout.stride, pointer);
+            glVertexAttribPointer(i, parameter.count(), parameter.type(), parameter.normalized(), layout.stride, pointer);
 
-            pointer += size * parameter.count;
+            pointer += size * parameter.count();
         }
         buffer.unbind();
 
