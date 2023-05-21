@@ -1,7 +1,5 @@
 package io.show.graphics.internal.gl;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -14,8 +12,14 @@ public class TextureAtlas implements AutoCloseable {
     private final int m_TileW;
     private final int m_TileH;
 
-    public TextureAtlas(int tileW, int tileH, int tilesX, int tilesY) {
-        m_Texture = new Texture().bind().setDefaultParameters().setData(tileW * tilesX, tileH * tilesY, null).unbind();
+    public TextureAtlas(int tileW, int tileH, int tilesX, int tilesY, int clear) {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(tileW * tilesX * tileH * tilesY * 4).order(ByteOrder.nativeOrder());
+        while (buffer.remaining() > 0) {
+            buffer.putInt(clear);
+        }
+        buffer.position(0);
+
+        m_Texture = new Texture().bind().setData(tileW * tilesX, tileH * tilesY, buffer).unbind();
         m_TileW = tileW;
         m_TileH = tileH;
     }
@@ -40,9 +44,29 @@ public class TextureAtlas implements AutoCloseable {
         return this;
     }
 
-    public TextureAtlas setTile(int tileX, int tileY, @Nullable ByteBuffer data) {
-        m_Texture.setData(tileX * m_TileW, tileY * m_TileH, m_TileW, m_TileH, data == null ? ByteBuffer.allocateDirect(m_TileW * m_TileH * 4).order(ByteOrder.nativeOrder()) : data);
+    public TextureAtlas setTile(int tileX, int tileY, ByteBuffer data) {
+        m_Texture.setData(tileX * m_TileW, tileY * m_TileH, m_TileW, m_TileH, data);
         return this;
+    }
+
+    public int getWidth() {
+        return m_Texture.getWidth();
+    }
+
+    public int getHeight() {
+        return m_Texture.getHeight();
+    }
+
+    public int getTileW() {
+        return m_TileW;
+    }
+
+    public int getTileH() {
+        return m_TileH;
+    }
+
+    public int getTilesX() {
+        return getWidth() / getTileW();
     }
 
     public Texture getTexture() {
