@@ -49,7 +49,7 @@ public class Window implements AutoCloseable {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // set the opengl context
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6); // version to 4.6.0
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // set the opengl profile to core
-        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // just for fun: make the window background transparent... :)
+        // glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // just for fun: make the window background transparent... :)
 
         m_Handle = glfwCreateWindow(width, height, title, NULL, NULL);
         if (m_Handle == NULL) throw new RuntimeException("Failed to create the GLFW window");

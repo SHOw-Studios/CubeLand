@@ -23,9 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -40,16 +39,18 @@ public class Graphics {
         demo();
     }
 
-    private static long block(int x, int y, int z, float level, float scale) {
-        float surface = level + SimplexNoise.noise(x * scale, y * scale, z * scale) * 10.0f;
+    private static int block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air;
+
+    private static int block(int x, int y, int z, float level, float scale) {
+        float surface = level + SimplexNoise.noise(z * scale, y * scale, x * scale) * 10.0f;
         float d = surface - y;
-        if (d <= 1 && d > 0) return 4;
-        if (d <= 2 && d > 0) return 8;
-        if (y < surface) return 13;
+        if (d <= 1 && d > 0) return block_grass_block;
+        if (d <= 2 && d > 0) return block_dirt;
+        if (y < surface) return block_stone;
         d = level - y;
-        if (d <= 1 && d > 0) return 3;
-        if (d > 0) return 2;
-        return -1;
+        if (d <= 1 && d > 0) return block_water_surface;
+        if (d > 0) return block_water;
+        return block_air;
     }
 
     /**
@@ -61,10 +62,10 @@ public class Graphics {
         final Graphics g = Graphics.getInstance();
 
         // you can register graphs that get drawn by ImGui as an overlay
-        g.registerGraph(0, (x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(1, (x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(2, (x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(3, new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
+        g.registerGraph((x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
+        g.registerGraph((x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
+        g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
+        g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
 
         final String[] textures = new String[]{ // just a temporary list of paths
 
@@ -75,6 +76,8 @@ public class Graphics {
                 "res/textures/block/liquid/water.bmp",
 
                 "res/textures/block/liquid/water_surface.bmp",
+
+                "res/textures/block/overworld/dirt.bmp",
 
                 "res/textures/block/overworld/grass_block.bmp",
 
@@ -98,45 +101,31 @@ public class Graphics {
 
         };
 
-        final float[] opacities = new float[]{
-
-                1.0f,
-
-                1.0f,
-
-                0.7f,
-
-                0.7f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f,
-
-                1.0f
-
-        };
+        final float[] opacities = new float[]{1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 
         try {
-            long id = 0;
-            for (String path : textures) // go through every path and register its bitmap into the graphics object
-                g.registerBitmap(id++, new Bitmap(ImageIO.read(new File(path)), opacities[(int) id - 1]));
+            for (int id = 0; id < textures.length; id++) // go through every path and register its bitmap into the graphics object
+                g.registerBitmap(new Bitmap(ImageIO.read(new File(textures[id])), opacities[id]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        block_air = g.registerBlockType(null); // air
+        block_lava = g.registerBlockType(new BlockType(0, true, false));
+        block_lava_surface = g.registerBlockType(new BlockType(1, true, false));
+        block_water = g.registerBlockType(new BlockType(2, true, true));
+        block_water_surface = g.registerBlockType(new BlockType(3, true, true));
+        block_dirt = g.registerBlockType(new BlockType(4, false, false));
+        block_grass_block = g.registerBlockType(new BlockType(5, false, false));
+        block_grass_wall = g.registerBlockType(new BlockType(6, false, false));
+        block_leaves = g.registerBlockType(new BlockType(7, false, true));
+        block_liane_wall = g.registerBlockType(new BlockType(8, false, true));
+        block_wood = g.registerBlockType(new BlockType(9, false, false));
+        block_wood_panel = g.registerBlockType(new BlockType(10, false, false));
+        block_coal_ore = g.registerBlockType(new BlockType(11, false, false));
+        block_diamond_ore = g.registerBlockType(new BlockType(12, false, false));
+        block_lapis_ore = g.registerBlockType(new BlockType(13, false, false));
+        block_stone = g.registerBlockType(new BlockType(14, false, false));
 
         // generate a texture atlas out of the registered textures to upload them to the gpu
         g.generateTextureAtlas(16, 16);
@@ -144,7 +133,7 @@ public class Graphics {
         final int width = 256;
         final int height = 256;
         final int depth = 2;
-        final long[][][] world = new long[depth][height][width];
+        final int[][][] world = new int[depth][height][width];
         for (int k = 0; k < depth; k++) {
             for (int j = 0; j < height; j++) {
                 for (int i = 0; i < width; i++) {
@@ -193,22 +182,35 @@ public class Graphics {
      * @param y
      */
     private record GraphInfo(float xMin, float xMax, float yMin, float yMax, Graph graph, int resolution, float[] y) {
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof GraphInfo info)) return false;
+            return xMin == info.xMin && xMax == info.xMax && yMin == info.yMin && yMax == info.yMax && graph.equals(info.graph) && resolution == info.resolution && Arrays.equals(y, info.y);
+        }
+
     }
 
     private final Window m_Window;
 
-    private final Material m_Material;
-    private final Map<Long, Bitmap> m_BitmapMap = new HashMap<>();
+    private final List<Bitmap> m_BitmapMap = new Vector<>();
     private TextureAtlas m_Atlas;
 
+    private final Material m_Material;
     private VertexArray m_VertexArray;
     private GLBuffer m_IndexBuffer;
     private GLBuffer m_VertexBuffer;
 
-    private final Map<Long, GraphInfo> m_GraphMap = new HashMap<>();
+    private final Material m_SkyboxMaterial;
+    private VertexArray m_SkyboxVertexArray;
+    private GLBuffer m_SkyboxIndexBuffer;
+    private GLBuffer m_SkyboxVertexBuffer;
+
+    private final List<GraphInfo> m_GraphMap = new Vector<>();
     private final ImGuiHelper m_ImGuiHelper;
 
     private final Vector2f m_CameraPosition = new Vector2f(8.0f, 64.0f);
+    private final List<BlockType> m_BlockTypes = new Vector<>();
 
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
@@ -234,6 +236,7 @@ public class Graphics {
 
         try {
             m_Material = new Material(new Shader("res/shaders/block/opaque.shader"));
+            m_SkyboxMaterial = new Material(new Shader("res/shaders/misc/skybox.shader"));
         } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
                  IOException e) {
             throw new RuntimeException(e);
@@ -243,6 +246,21 @@ public class Graphics {
         m_Material.getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
 
         onWindowResize(); // Set up the orthographic matrix for the first time
+
+        // Create Skybox //
+
+        final float[] skyboxVertices = new float[]{-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f};
+        ByteBuffer buffer = ByteBuffer.allocateDirect(Float.BYTES * skyboxVertices.length).order(ByteOrder.nativeOrder());
+        buffer.asFloatBuffer().put(skyboxVertices);
+        m_SkyboxVertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
+
+        final int[] skyboxIndices = new int[]{0, 1, 2, 2, 3, 0};
+        buffer = ByteBuffer.allocateDirect(Integer.BYTES * skyboxIndices.length).order(ByteOrder.nativeOrder());
+        buffer.asIntBuffer().put(skyboxIndices);
+        m_SkyboxIndexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
+
+        final VertexArray.Layout skyboxLayout = new VertexArray.Layout().pushFloat(2);
+        m_SkyboxVertexArray = new VertexArray().bind().bindBuffer(m_SkyboxVertexBuffer, skyboxLayout).unbind();
 
         // Init and setup ImGui //
 
@@ -265,6 +283,7 @@ public class Graphics {
         final float scale = 10.0f;
         Matrix4f mat = new Matrix4f().ortho2D(-a * scale, a * scale, -scale, scale);
         m_Material.getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
+        m_SkyboxMaterial.getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
     }
 
     /**
@@ -273,41 +292,50 @@ public class Graphics {
      * Please notice that you can only assign a bitmap to an identifier once,
      * so you cannot re-register a bitmap twice with the same id
      *
-     * @param id     a unique identifier for the bitmap
      * @param bitmap the bitmap to be registered
-     * @return true if there was no bitmap registered with this id before
+     * @return a unique identifier for the bitmap
      */
-    public boolean registerBitmap(long id, Bitmap bitmap) {
-        return m_BitmapMap.putIfAbsent(id, bitmap) == null;
+    public int registerBitmap(Bitmap bitmap) {
+        if (m_BitmapMap.contains(bitmap)) return m_BitmapMap.indexOf(bitmap);
+        m_BitmapMap.add(bitmap);
+        return m_BitmapMap.size() - 1;
     }
 
     /**
-     * @param id         a unique identifier for the graph
      * @param graph      the function graph implementation
      * @param resolution the resolution of the graph, so how smooth it looks; higher == smoother
      * @param xMin       the minimum x
      * @param xMax       the maximum x
      * @param yMin       the minimum y
      * @param yMax       the maximum y
-     * @return true if there was no graph registered with this id before
+     * @return a unique identifier for the graph
      */
-    public boolean registerGraph(long id, Graph graph, int resolution, float xMin, float xMax, float yMin, float yMax) {
+    public int registerGraph(Graph graph, int resolution, float xMin, float xMax, float yMin, float yMax) {
         GraphInfo info = new GraphInfo(xMin, xMax, yMin, yMax, graph, resolution, null);
-        return m_GraphMap.putIfAbsent(id, info) == null;
+        if (m_GraphMap.contains(info)) return m_GraphMap.indexOf(info);
+        m_GraphMap.add(info);
+        return m_GraphMap.size() - 1;
     }
 
     /**
-     * @param id   a unique identifier for the graph
      * @param y    an array of y positions
      * @param xMin the minimum x
      * @param xMax the maximum x
      * @param yMin the minimum y
      * @param yMax the maximum y
-     * @return true if there was no graph registered with this id before
+     * @return a unique identifier for the graph
      */
-    public boolean registerGraph(long id, float[] y, float xMin, float xMax, float yMin, float yMax) {
+    public int registerGraph(float[] y, float xMin, float xMax, float yMin, float yMax) {
         GraphInfo info = new GraphInfo(xMin, xMax, yMin, yMax, null, y.length, y);
-        return m_GraphMap.putIfAbsent(id, info) == null;
+        if (m_GraphMap.contains(info)) return m_GraphMap.indexOf(info);
+        m_GraphMap.add(info);
+        return m_GraphMap.size() - 1;
+    }
+
+    public int registerBlockType(BlockType blockType) {
+        if (m_BlockTypes.contains(blockType)) return m_BlockTypes.indexOf(blockType);
+        m_BlockTypes.add(blockType);
+        return m_BlockTypes.size() - 1;
     }
 
     /**
@@ -322,16 +350,15 @@ public class Graphics {
     public Graphics generateTextureAtlas(int tileW, int tileH) {
 
         final int tilesEdgeNum = (int) Math.ceil(Math.sqrt(m_BitmapMap.size()));
-        final var bitmaps = m_BitmapMap.values().stream().toList();
 
         final ByteBuffer buffer = ByteBuffer.allocateDirect(tileW * tileH * 4).order(ByteOrder.nativeOrder());
         final TextureAtlas atlas = new TextureAtlas(tileW, tileH, tilesEdgeNum, tilesEdgeNum, 0xffff00ff).bind();
 
-        for (int i = 0; i < bitmaps.size(); i++) {
+        for (int i = 0; i < m_BitmapMap.size(); i++) {
             final int x = i % tilesEdgeNum;
             final int y = (i - x) / tilesEdgeNum;
 
-            byte[] data = bitmaps.get(i).getDataAsByteArray();
+            byte[] data = m_BitmapMap.get(i).getDataAsByteArray();
 
             atlas.setTile(x, y, buffer.clear().put(data).position(0));
         }
@@ -346,7 +373,7 @@ public class Graphics {
         return this;
     }
 
-    public Graphics generateMesh(long[][][] world, int xOffset, int width, int height, int depth) {
+    public Graphics generateMesh(int[][][] world, int xOffset, int width, int height, int depth) {
 
         final int atlasW = m_Atlas.getWidth();
         final int atlasH = m_Atlas.getHeight();
@@ -368,12 +395,16 @@ public class Graphics {
             for (int j = 0; j < height; j++) {
                 for (int i = 0; i < width; i++) {
 
-                    final long block = world[k][j][i];
-                    if (block < 0) continue; // air
-                    if (k < depth - 1 && world[k + 1][j][i] >= 4) continue; // block is blocked...
+                    final BlockType block = m_BlockTypes.get(world[k][j][i]);
+                    if (block == null) continue; // air
 
-                    final int tx = (int) (block % atlasTX);
-                    final int ty = (int) ((block - tx) / atlasTX);
+                    if (k < depth - 1) {
+                        final BlockType front = m_BlockTypes.get(world[k + 1][j][i]);
+                        if (front != null && !front.isTransparent) continue; // block is blocked...
+                    }
+
+                    final int tx = (int) (block.textureIndex % atlasTX);
+                    final int ty = (int) ((block.textureIndex - tx) / atlasTX);
 
                     final float u = tx * invW;
                     final float v = ty * invH;
@@ -382,10 +413,15 @@ public class Graphics {
                     final float y = j;
                     final float z = k;
 
-                    vertices.add(new Vertex(x - 0.5f, y - 0.5f, z, u, v + invH));
-                    vertices.add(new Vertex(x - 0.5f, y + 0.5f, z, u, v));
-                    vertices.add(new Vertex(x + 0.5f, y + 0.5f, z, u + invW, v));
-                    vertices.add(new Vertex(x + 0.5f, y - 0.5f, z, u + invW, v + invH));
+                    Vertex v0 = new Vertex(x - 0.5f, y - 0.5f, z, u, v + invH);
+                    Vertex v1 = new Vertex(x - 0.5f, y + 0.5f, z, u, v);
+                    Vertex v2 = new Vertex(x + 0.5f, y + 0.5f, z, u + invW, v);
+                    Vertex v3 = new Vertex(x + 0.5f, y - 0.5f, z, u + invW, v + invH);
+
+                    vertices.add(v0);
+                    vertices.add(v1);
+                    vertices.add(v2);
+                    vertices.add(v3);
 
                     indices.add(vertices.size() - 4); // 0
                     indices.add(vertices.size() - 3); // 1
@@ -451,13 +487,19 @@ public class Graphics {
      * @return true while the window has not been closed
      */
     public boolean loopOnce() {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Renderer.render(m_SkyboxVertexArray, m_SkyboxIndexBuffer, m_SkyboxMaterial);
 
+        glEnable(GL_DEPTH_TEST);
         Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
+        glDisable(GL_DEPTH_TEST);
+        
+        glDisable(GL_BLEND);
 
         m_ImGuiHelper.loopOnce(() -> {
 
@@ -466,7 +508,9 @@ public class Graphics {
             ImGui.begin("Graphs");
             ImGui.beginTabBar("Tabs");
 
-            m_GraphMap.forEach((id, info) -> {
+            for (int id = 0; id < m_GraphMap.size(); id++) {
+                final GraphInfo info = m_GraphMap.get(id);
+
                 if (ImGui.beginTabItem("Graph #" + id)) {
                     if (ImPlot.beginPlot("Plot #" + id)) {
                         final int res = info.resolution();
@@ -487,7 +531,7 @@ public class Graphics {
                     }
                     ImGui.endTabItem();
                 }
-            });
+            }
 
             ImGui.endTabBar();
             ImGui.end();
@@ -531,12 +575,18 @@ public class Graphics {
     public void destroy() {
         m_Window.close(); // Destroy the window
 
-        m_Material.close();
         m_Atlas.close();
         m_ImGuiHelper.close();
+
+        m_Material.close();
         m_VertexArray.close();
         m_IndexBuffer.close();
         m_VertexBuffer.close();
+
+        m_SkyboxMaterial.close();
+        m_SkyboxVertexArray.close();
+        m_SkyboxIndexBuffer.close();
+        m_SkyboxVertexBuffer.close();
 
         // Terminate GLFW
         glfwTerminate();
