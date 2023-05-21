@@ -13,6 +13,8 @@ import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
 import org.joml.Math;
 import org.joml.Matrix4f;
+import org.joml.SimplexNoise;
+import org.joml.Vector2f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
@@ -22,7 +24,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL15.*;
@@ -34,6 +38,18 @@ public class Graphics {
 
     public static void main(String[] args) {
         demo();
+    }
+
+    private static long block(int x, int y, int z, float level, float scale) {
+        float surface = level + SimplexNoise.noise(x * scale, y * scale, z * scale) * 10.0f;
+        float d = surface - y;
+        if (d <= 1 && d > 0) return 4;
+        if (d <= 2 && d > 0) return 8;
+        if (y < surface) return 13;
+        d = level - y;
+        if (d <= 1 && d > 0) return 3;
+        if (d > 0) return 2;
+        return -1;
     }
 
     /**
@@ -78,20 +94,65 @@ public class Graphics {
 
                 "res/textures/block/underworld/lapis_ore.bmp",
 
-                "res/textures/block/underworld/stone.bmp",
+                "res/textures/block/underworld/stone.bmp"
+
+        };
+
+        final float[] opacities = new float[]{
+
+                1.0f,
+
+                1.0f,
+
+                0.7f,
+
+                0.7f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f,
+
+                1.0f
 
         };
 
         try {
             long id = 0;
             for (String path : textures) // go through every path and register its bitmap into the graphics object
-                g.registerBitmap(id++, new Bitmap(ImageIO.read(new File(path))));
+                g.registerBitmap(id++, new Bitmap(ImageIO.read(new File(path)), opacities[(int) id - 1]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         // generate a texture atlas out of the registered textures to upload them to the gpu
         g.generateTextureAtlas(16, 16);
+
+        final int width = 256;
+        final int height = 256;
+        final int depth = 2;
+        final long[][][] world = new long[depth][height][width];
+        for (int k = 0; k < depth; k++) {
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+                    world[k][j][i] = block(i, j, k, 64f, 0.1f);
+                }
+            }
+        }
+        g.generateMesh(world, 0, width, height, depth);
 
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
@@ -102,7 +163,7 @@ public class Graphics {
     }
 
     private static Graphics __instance;
-    
+
     /**
      * This singleton method either returns the current singleton instance of the Graphics class or, if not yet done, creates one and returns it.
      *
@@ -142,9 +203,12 @@ public class Graphics {
 
     private VertexArray m_VertexArray;
     private GLBuffer m_IndexBuffer;
+    private GLBuffer m_VertexBuffer;
 
     private final Map<Long, GraphInfo> m_GraphMap = new HashMap<>();
     private final ImGuiHelper m_ImGuiHelper;
+
+    private final Vector2f m_CameraPosition = new Vector2f(8.0f, 64.0f);
 
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
@@ -175,45 +239,32 @@ public class Graphics {
             throw new RuntimeException(e);
         }
 
+        Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
+        m_Material.getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+
         onWindowResize(); // Set up the orthographic matrix for the first time
 
         // Init and setup ImGui //
 
-        m_ImGuiHelper = new ImGuiHelper(m_Window.getHandle(), "#version 130");
+        m_ImGuiHelper = new ImGuiHelper(m_Window.getHandle(), "#version 460 core");
         m_ImGuiHelper.setDefaultFont("res/fonts/Gothic3.ttf", 16.0f);
         m_ImGuiHelper.addFont("res/fonts/Bladeline-oXRa.ttf", 10.0f);
         m_ImGuiHelper.addFont("res/fonts/Evidence-M53Y.ttf", 18.0f);
         m_ImGuiHelper.addFont("res/fonts/Oasis-BW0JV.ttf", 16.0f);
         m_ImGuiHelper.addFont("res/fonts/CursedTimerUlil-Aznm.ttf", 14.0f);
         m_ImGuiHelper.updateFonts();
-
-        // Prepare rendering data //
-
-        m_VertexArray = new VertexArray();
-
-        final int[] indices = new int[]{0, 1, 2, 2, 3, 0};
-        ByteBuffer buffer = ByteBuffer.allocateDirect(indices.length * Integer.BYTES).order(ByteOrder.nativeOrder());
-        buffer.asIntBuffer().put(indices);
-        m_IndexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
-
-        final float[] vertices = new float[]{-0.5f, -0.5f, 0, 0, 0, 0, 0, 1, -0.5f, 0.5f, 0, 1, 0, 1, 0, 1, 0.5f, 0.5f, 1, 1, 1, 1, 0, 1, 0.5f, -0.5f, 1, 0, 1, 0, 0, 1};
-        buffer = ByteBuffer.allocateDirect(vertices.length * Float.BYTES).order(ByteOrder.nativeOrder());
-        buffer.asFloatBuffer().put(vertices);
-        GLBuffer vertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
-
-        final VertexArray.Layout layout = new VertexArray.Layout().pushFloat(2).pushFloat(2).pushFloat(4);
-        m_VertexArray.bind().bindBuffer(vertexBuffer, layout).unbind();
     }
 
     /**
      * This method gets called every time the window resizes; whenever this happens it updates the projection matrix in the shader program to its new size
      */
     private void onWindowResize() {
-        float w = m_Window.getWidth();
-        float h = m_Window.getHeight();
-        float a = w / h;
-        Matrix4f mat = new Matrix4f().ortho2D(-a, a, -1.0f, 1.0f);
-        m_Material.getShader().bind().setUniformFloatMat4("matrix", mat.get(new float[16])).unbind();
+        final float w = m_Window.getWidth();
+        final float h = m_Window.getHeight();
+        final float a = w / h;
+        final float scale = 10.0f;
+        Matrix4f mat = new Matrix4f().ortho2D(-a * scale, a * scale, -scale, scale);
+        m_Material.getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
     }
 
     /**
@@ -270,11 +321,11 @@ public class Graphics {
      */
     public Graphics generateTextureAtlas(int tileW, int tileH) {
 
-        int tilesEdgeNum = (int) Math.ceil(Math.sqrt(m_BitmapMap.size()));
-        var bitmaps = m_BitmapMap.values().stream().toList();
+        final int tilesEdgeNum = (int) Math.ceil(Math.sqrt(m_BitmapMap.size()));
+        final var bitmaps = m_BitmapMap.values().stream().toList();
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(tileW * tileH * 4).order(ByteOrder.nativeOrder());
-        TextureAtlas atlas = new TextureAtlas(tileW, tileH, tilesEdgeNum, tilesEdgeNum).bind();
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(tileW * tileH * 4).order(ByteOrder.nativeOrder());
+        final TextureAtlas atlas = new TextureAtlas(tileW, tileH, tilesEdgeNum, tilesEdgeNum, 0xffff00ff).bind();
 
         for (int i = 0; i < bitmaps.size(); i++) {
             final int x = i % tilesEdgeNum;
@@ -287,10 +338,88 @@ public class Graphics {
 
         m_Atlas = atlas.unbind();
 
-        m_Material.getTextures().clear();
+        m_Material.clearTextures();
         m_Material.addTexture(m_Atlas.getTexture());
 
         m_Material.getShader().bind().setUniformInt("sampler", 0).unbind();
+
+        return this;
+    }
+
+    public Graphics generateMesh(long[][][] world, int xOffset, int width, int height, int depth) {
+
+        final int atlasW = m_Atlas.getWidth();
+        final int atlasH = m_Atlas.getHeight();
+        final int atlasTW = m_Atlas.getTileW();
+        final int atlasTH = m_Atlas.getTileH();
+        final int atlasTX = m_Atlas.getTilesX();
+
+        final float invW = atlasTW / (float) atlasW;
+        final float invH = atlasTH / (float) atlasH;
+
+        record Vertex(float x, float y, float z, float u, float v) {
+            public static final int BYTES = 20;
+        }
+
+        final List<Vertex> vertices = new Vector<>();
+        final List<Integer> indices = new Vector<>();
+
+        for (int k = 0; k < depth; k++) {
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+
+                    final long block = world[k][j][i];
+                    if (block < 0) continue; // air
+                    if (k < depth - 1 && world[k + 1][j][i] >= 4) continue; // block is blocked...
+
+                    final int tx = (int) (block % atlasTX);
+                    final int ty = (int) ((block - tx) / atlasTX);
+
+                    final float u = tx * invW;
+                    final float v = ty * invH;
+
+                    final float x = i + xOffset;
+                    final float y = j;
+                    final float z = k;
+
+                    vertices.add(new Vertex(x - 0.5f, y - 0.5f, z, u, v + invH));
+                    vertices.add(new Vertex(x - 0.5f, y + 0.5f, z, u, v));
+                    vertices.add(new Vertex(x + 0.5f, y + 0.5f, z, u + invW, v));
+                    vertices.add(new Vertex(x + 0.5f, y - 0.5f, z, u + invW, v + invH));
+
+                    indices.add(vertices.size() - 4); // 0
+                    indices.add(vertices.size() - 3); // 1
+                    indices.add(vertices.size() - 2); // 2
+                    indices.add(vertices.size() - 2); // 2
+                    indices.add(vertices.size() - 1); // 3
+                    indices.add(vertices.size() - 4); // 0
+                }
+            }
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocateDirect(vertices.size() * Vertex.BYTES).order(ByteOrder.nativeOrder());
+        for (Vertex vertex : vertices) {
+            buffer.putFloat(vertex.x()).putFloat(vertex.y()).putFloat(vertex.z()).putFloat(vertex.u()).putFloat(vertex.v());
+        }
+        buffer.position(0);
+
+        if (m_VertexBuffer == null)
+            m_VertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_DYNAMIC_DRAW);
+        m_VertexBuffer.bind().setData(buffer).unbind();
+
+        buffer = ByteBuffer.allocateDirect(indices.size() * Integer.BYTES).order(ByteOrder.nativeOrder());
+        for (int index : indices) {
+            buffer.putInt(index);
+        }
+        buffer.position(0);
+
+        if (m_IndexBuffer == null)
+            m_IndexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_DYNAMIC_DRAW);
+        m_IndexBuffer.bind().setData(buffer).unbind();
+
+        if (m_VertexArray == null) m_VertexArray = new VertexArray();
+        final VertexArray.Layout layout = new VertexArray.Layout().pushFloat(3).pushFloat(2);
+        m_VertexArray.bind().bindBuffer(m_VertexBuffer, layout).unbind();
 
         return this;
     }
@@ -326,7 +455,7 @@ public class Graphics {
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
-        // glDisable(GL_CULL_FACE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
 
@@ -366,18 +495,48 @@ public class Graphics {
             ImGui.showDemoWindow();
         });
 
+        if (!ImGui.getIO().getWantCaptureKeyboard()) {
+            final float speed = ImGui.getIO().getDeltaTime() * 20.0f;
+            boolean move = false;
+
+            if (m_Window.getKeyDown(GLFW_KEY_UP)) {
+                m_CameraPosition.y += speed;
+                move = true;
+            }
+            if (m_Window.getKeyDown(GLFW_KEY_DOWN)) {
+                m_CameraPosition.y -= speed;
+                move = true;
+            }
+            if (m_Window.getKeyDown(GLFW_KEY_RIGHT)) {
+                m_CameraPosition.x += speed;
+                move = true;
+            }
+            if (m_Window.getKeyDown(GLFW_KEY_LEFT)) {
+                m_CameraPosition.x -= speed;
+                move = true;
+            }
+
+            if (move) {
+                Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
+                m_Material.getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+            }
+        }
+
         return m_Window.loopOnce();
     }
 
     /**
-     * Destroys the window object, cleans up all the other resources, terminates GLFW and frees the error callback
+     * Destroys the window object, cleans up all the other resources, terminates GLFW and frees the error callback. Call this method after no longer using this graphics instance!
      */
     public void destroy() {
-        // Destroy the window
-        m_Window.close();
+        m_Window.close(); // Destroy the window
+
         m_Material.close();
         m_Atlas.close();
         m_ImGuiHelper.close();
+        m_VertexArray.close();
+        m_IndexBuffer.close();
+        m_VertexBuffer.close();
 
         // Terminate GLFW
         glfwTerminate();
@@ -386,5 +545,7 @@ public class Graphics {
         GLFWErrorCallback callback = glfwSetErrorCallback(null);
         // Check if it already has been freed
         if (callback != null) callback.free();
+
+        __instance = null; // clear the singleton pointer
     }
 }

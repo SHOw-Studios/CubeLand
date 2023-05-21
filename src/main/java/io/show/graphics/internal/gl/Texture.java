@@ -16,14 +16,15 @@ public class Texture implements AutoCloseable {
 
     private final int m_Handle;
 
+    private int m_Width;
+    private int m_Height;
+
     public Texture() {
         int[] handle = new int[1];
         glGenTextures(handle);
         m_Handle = handle[0];
 
-        bind();
-        setDefaultParameters();
-        unbind();
+        bind().setDefaultParameters().unbind();
     }
 
     public int getHandle() {
@@ -61,6 +62,8 @@ public class Texture implements AutoCloseable {
     }
 
     public Texture setData(int width, int height, @Nullable ByteBuffer data) {
+        m_Width = width;
+        m_Height = height;
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         return this;
     }
@@ -68,6 +71,14 @@ public class Texture implements AutoCloseable {
     public Texture setData(int x, int y, int width, int height, ByteBuffer data) {
         glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
         return this;
+    }
+
+    public int getWidth() {
+        return m_Width;
+    }
+
+    public int getHeight() {
+        return m_Height;
     }
 
     @Override

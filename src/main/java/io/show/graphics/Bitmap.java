@@ -102,7 +102,7 @@ public class Bitmap {
             bytes[idx] = (byte) (m_Data[i] >>> 16);     // R
             bytes[idx + 1] = (byte) (m_Data[i] >>> 8);  // G
             bytes[idx + 2] = (byte) (m_Data[i]);        // B
-            bytes[idx + 3] = (byte) (m_Data[i] >>> 24); // A
+            bytes[idx + 3] = (byte) (255.999f * m_Opacity); // A
         }
         return bytes;
     }

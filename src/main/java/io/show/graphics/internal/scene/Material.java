@@ -25,6 +25,11 @@ public class Material implements AutoCloseable {
         this(shader, new Vector<>());
     }
 
+    public Material clearTextures() {
+        m_Textures.clear();
+        return this;
+    }
+
     public Material addTexture(Texture texture) {
         m_Textures.add(texture);
         return this;
