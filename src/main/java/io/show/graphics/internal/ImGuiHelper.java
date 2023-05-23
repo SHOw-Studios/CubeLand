@@ -21,9 +21,9 @@ public class ImGuiHelper implements AutoCloseable {
         ImPlot.createContext();
 
         System.out.printf("ImGui %s%n", ImGui.getVersion());
-        
+
         ImGui.styleColorsDark();
-        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable | ImGuiConfigFlags.DockingEnable | ImGuiConfigFlags.NavEnableKeyboard);
+        ImGui.getIO().addConfigFlags(/*ImGuiConfigFlags.ViewportsEnable | */ImGuiConfigFlags.DockingEnable | ImGuiConfigFlags.NavEnableKeyboard);
 
         m_ImGuiImplGlfw.init(window, true);
         m_ImGuiImplGl3.init(glslVersion);
