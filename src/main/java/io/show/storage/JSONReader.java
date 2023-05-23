@@ -1,15 +1,25 @@
 package io.show.storage;
 
-import org.json.*;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class textures_reader {
+public class JSONReader {
     public static void main(String[] args) {
+        JSONReader d = new JSONReader();
+        d.m_File = new File("res/textures/textures.json");
+        d.read();
+
+    }
+
+    private File m_File;
+
+    public JSONObject read() {
         String fileContent = "";
-        try (BufferedReader br = new BufferedReader(new FileReader("res/textures/textures.json"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(m_File))) {
 
             String line;
             StringBuilder sb = new StringBuilder();
@@ -28,8 +38,8 @@ public class textures_reader {
         }
         JSONObject jsonObj = new JSONObject(fileContent);
 
+        return jsonObj;
 
-        ;
 
     }
 
