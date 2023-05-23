@@ -67,6 +67,8 @@ public class Graphics {
         g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
         g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
 
+        g.registerGraph((x) -> SimplexNoise.noise(x, 0.0f), 1000, -10.0f, 10.0f, -1.0f, 1.0f);
+
         final String[] textures = new String[]{ // just a temporary list of paths
 
                 "res/textures/block/liquid/lava.bmp",
@@ -110,6 +112,9 @@ public class Graphics {
             throw new RuntimeException(e);
         }
 
+        // generate a texture atlas out of the registered textures to upload them to the gpu
+        g.generateTextureAtlas(16, 16);
+
         block_air = g.registerBlockType(null); // air
         block_lava = g.registerBlockType(new BlockType(0, true, false));
         block_lava_surface = g.registerBlockType(new BlockType(1, true, false));
@@ -126,9 +131,6 @@ public class Graphics {
         block_diamond_ore = g.registerBlockType(new BlockType(12, false, false));
         block_lapis_ore = g.registerBlockType(new BlockType(13, false, false));
         block_stone = g.registerBlockType(new BlockType(14, false, false));
-
-        // generate a texture atlas out of the registered textures to upload them to the gpu
-        g.generateTextureAtlas(16, 16);
 
         final int width = 256;
         final int height = 256;
@@ -498,7 +500,7 @@ public class Graphics {
         glEnable(GL_DEPTH_TEST);
         Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
         glDisable(GL_DEPTH_TEST);
-        
+
         glDisable(GL_BLEND);
 
         m_ImGuiHelper.loopOnce(() -> {
