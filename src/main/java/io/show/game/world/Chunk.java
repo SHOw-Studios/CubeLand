@@ -4,6 +4,7 @@ public class Chunk {
 
     private static final int WIDTH = 16;
     private int HEIGHT;
+    private static final int DEPTH = 2;
     private static final int LAYERS = 2;
     private int m_StartPosition;
     private World m_ParentWorld;
@@ -11,6 +12,10 @@ public class Chunk {
 
     public int getHEIGHT() {
         return HEIGHT;
+    }
+
+    public int getDEPTH() {
+        return DEPTH;
     }
 
     public int getM_StartPosition() {
@@ -29,12 +34,11 @@ public class Chunk {
         return WIDTH;
     }
 
-    public Chunk(int height, int startPosition, World parentWorld) {
+    public Chunk(int height, int startPosition, World parentWorld, int[] graphicArray) {
         HEIGHT = height;
-        m_Blocks = new int[WIDTH][HEIGHT][LAYERS];
         m_StartPosition = startPosition;
         m_ParentWorld = parentWorld;
-        Generator generator = new Generator(parentWorld, this);
+        Generator generator = new Generator(parentWorld, this, graphicArray);
         m_Blocks = generator.generate();
     }
 

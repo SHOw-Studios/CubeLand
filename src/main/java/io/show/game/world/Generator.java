@@ -1,5 +1,6 @@
 package io.show.game.world;
 
+import org.joml.SimplexNoise;
 import vendor.opensimplex2.OpenSimplex2;
 
 import java.util.Random;
@@ -9,21 +10,26 @@ public class Generator {
     private Random random = new Random();
     private int HEIGHT;
     private int WIDTH;
+    private int DEPTH;
+    private float scale = 0.1f;
     private long m_HeightSeed;
     private int m_StartPos;
     private long m_OrelikelynessSeed;
     private long m_OrehightSeed1;
     private long m_OrehightSeed2;
     private long m_WhichOreSeed;
+    private int[] graphicArray;
     private Orelikelikelyness ores = new Orelikelikelyness(m_OrehightSeed1, m_OrehightSeed2,
             m_OrelikelynessSeed, m_WhichOreSeed);
 
-    public Generator(World inputWorld, Chunk inputChunk) {
+    public Generator(World inputWorld, Chunk inputChunk, int[] graphicArray) {
         HEIGHT = inputChunk.getHEIGHT();
         WIDTH = inputChunk.getWIDTH();
+        DEPTH = inputChunk.getDEPTH();
         xOff = inputChunk.getM_StartPosition();
         m_HeightSeed = inputWorld.heightSeed;
         m_StartPos = inputChunk.getM_StartPosition();
+        this.graphicArray = graphicArray;
     }
 
 //    public static void print2D(int[][] mat) {
@@ -35,9 +41,9 @@ public class Generator {
 
     public int[][][] generate() {
         int[][][] Map;
-        Map = initMap(m_StartPos);
-        Map = setWater(Map);
-        Map = ores.setOres(Map);
+        Map = initMap();
+//        Map = setWater(Map);
+//        Map = ores.setOres(Map);
         return Map;
     }
 
@@ -45,18 +51,28 @@ public class Generator {
      * Returns an int[][] Array with the values on witch PerlinNoise is set to 1,
      * to get a value that saperates air and Ground
      */
-    public int[][][] initMap(int startPos) {
+    public int[][][] initMap() {
         int[][][] MapArray;
-        MapArray = new int[WIDTH][HEIGHT][2];
-        for (int i = startPos; i < WIDTH - 1; i++) {
-            float noise = OpenSimplex2.noise2(m_HeightSeed, xOff, 0) * (HEIGHT - 150) + 50;
-            //-150 to get min 50 Ground and min 100 to build above
-            //+50 to get min 50 Ground
-            int roundedNoise = Math.round(noise);
-            for (int j = roundedNoise; j < HEIGHT - 1; j++) {
-                MapArray[i][j][0] = 1;
+        MapArray = new int[DEPTH][HEIGHT][WIDTH];
+        for (int i = 0; i < DEPTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                for (int k = 0; k < WIDTH; k++) {
+                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, xOff + k * scale, i * scale) * 20.0f;
+                    //-150 to get min 50 Ground and min 100 to build above
+                    //+50 to get min 50 Ground
+                    float d = noise - j;
+                    int roundedNoise = Math.round(noise);
+                    if (d <= 1 && d > 0) MapArray[i][j][k] = graphicArray[5];
+                    else if (d <= 2 && d > 0) MapArray[i][j][k] = graphicArray[4];
+                    else if (j < noise) MapArray[i][j][k] = graphicArray[14];
+                    else {
+                        d = HEIGHT / 2 - j;
+                        if (d <= 1 && d > 0) MapArray[i][j][k] = graphicArray[3];
+                        else if (d > 0) MapArray[i][j][k] = graphicArray[2];
+                        else MapArray[i][j][k] = graphicArray[15];
+                    }
+                }
             }
-            System.out.print("ok");
         }
         return MapArray;
     }
