@@ -42,7 +42,9 @@ public class Storage {
 
     private static final String SAVES_PATH = "saves";
 
+
     public static boolean writeWorld(World world) throws IOException {
+        /* Creates World with a class World -> class world needs seed,name, und chunks (int arrays) */
         File dir = new File(SAVES_PATH, world.getName());
         if (!dir.exists())
             if (!dir.mkdirs()) return false;
@@ -68,6 +70,7 @@ public class Storage {
     }
 
     public static boolean writeChunk(World world, int x) throws IOException {
+        /* saves Chunk */
         File dir = new File(SAVES_PATH, world.getName());
         if (!dir.exists()) return false;
 
