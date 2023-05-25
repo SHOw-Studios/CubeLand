@@ -1,19 +1,17 @@
 package io.show.storage;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.Map;
 
 public class World {
 
     private String m_Name;
     private long m_Seed;
-    private List<int[]> m_Chunks = new Vector<>();
+    private Map<Integer, int[]> m_Chunks = new HashMap();
 
-    public World(String name, long seed, int[]... chunks) {
+    public World(String name, long seed) {
         m_Name = name;
         m_Seed = seed;
-        m_Chunks.addAll(Arrays.asList(chunks));
     }
 
     public String getName() {
@@ -30,6 +28,10 @@ public class World {
 
     public int[] getChunk(int x) {
         return m_Chunks.get(x);
+    }
+
+    public void addChunk(int x, int[] chunk) {
+        m_Chunks.put(x, chunk);
     }
 
 }
