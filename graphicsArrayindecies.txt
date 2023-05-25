@@ -1,0 +1,17 @@
+graphicsArray:
+    0: block_lava,
+    1: block_lava_surface,
+    2: block_water,
+    3: block_water_surface,
+    4: block_dirt,
+    5: block_grass_block,
+    6: block_grass_wall,
+    7: block_leaves,
+    8: block_liane_wall,
+    9: block_wood,
+    10: block_wood_panel,
+    11: block_coal_ore,
+    12: block_diamond_ore,
+    13: block_lapis_ore,
+    14: block_stone,
+    15: block_air
