@@ -13,13 +13,10 @@ import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
 import org.joml.Math;
 import org.joml.Matrix4f;
-import org.joml.SimplexNoise;
 import org.joml.Vector2f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import javax.imageio.ImageIO;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -36,120 +33,10 @@ import static org.lwjgl.opengl.GL15.*;
 public class Graphics {
 
     public static void main(String[] args) {
-        demo();
-    }
-
-    private static int block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air;
-
-    private static int block(int x, int y, int z, float level, float scale) {
-        float surface = level + SimplexNoise.noise(z * scale, y * scale, x * scale) * 10.0f;
-        float d = surface - y;
-        if (d <= 1 && d > 0) return block_grass_block;
-        if (d <= 2 && d > 0) return block_dirt;
-        if (y < surface) return block_stone;
-        d = level - y;
-        if (d <= 1 && d > 0) return block_water_surface;
-        if (d > 0) return block_water;
-        return block_air;
-    }
-
-    /**
-     * A simple graphics demo, featuring graphs, textures and a (very simple) main loop
-     */
-    public static void demo() {
-
-        // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
-        // you can register graphs that get drawn by ImGui as an overlay
-        g.registerGraph((x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
+        while (g.loopOnce()) ;
 
-        g.registerGraph((x) -> SimplexNoise.noise(x, 0.0f), 1000, -10.0f, 10.0f, -1.0f, 1.0f);
-
-        final String[] textures = new String[]{ // just a temporary list of paths
-
-                "res/textures/block/liquid/lava.bmp",
-
-                "res/textures/block/liquid/lava_surface.bmp",
-
-                "res/textures/block/liquid/water.bmp",
-
-                "res/textures/block/liquid/water_surface.bmp",
-
-                "res/textures/block/overworld/dirt.bmp",
-
-                "res/textures/block/overworld/grass_block.bmp",
-
-                "res/textures/block/overworld/grass_wall.bmp",
-
-                "res/textures/block/overworld/leaves.bmp",
-
-                "res/textures/block/overworld/liane_wall.bmp",
-
-                "res/textures/block/overworld/wood.bmp",
-
-                "res/textures/block/panel/wood_panel.bmp",
-
-                "res/textures/block/underworld/coal_ore.bmp",
-
-                "res/textures/block/underworld/diamond_ore.bmp",
-
-                "res/textures/block/underworld/lapis_ore.bmp",
-
-                "res/textures/block/underworld/stone.bmp"
-
-        };
-
-        final float[] opacities = new float[]{1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-
-        try {
-            for (int id = 0; id < textures.length; id++) // go through every path and register its bitmap into the graphics object
-                g.registerBitmap(new Bitmap(ImageIO.read(new File(textures[id])), opacities[id]));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        // generate a texture atlas out of the registered textures to upload them to the gpu
-        g.generateTextureAtlas(16, 16);
-
-        block_air = g.registerBlockType(null); // air
-        block_lava = g.registerBlockType(new BlockType(0, true, false));
-        block_lava_surface = g.registerBlockType(new BlockType(1, true, false));
-        block_water = g.registerBlockType(new BlockType(2, true, true));
-        block_water_surface = g.registerBlockType(new BlockType(3, true, true));
-        block_dirt = g.registerBlockType(new BlockType(4, false, false));
-        block_grass_block = g.registerBlockType(new BlockType(5, false, false));
-        block_grass_wall = g.registerBlockType(new BlockType(6, false, false));
-        block_leaves = g.registerBlockType(new BlockType(7, false, true));
-        block_liane_wall = g.registerBlockType(new BlockType(8, false, true));
-        block_wood = g.registerBlockType(new BlockType(9, false, false));
-        block_wood_panel = g.registerBlockType(new BlockType(10, false, false));
-        block_coal_ore = g.registerBlockType(new BlockType(11, false, false));
-        block_diamond_ore = g.registerBlockType(new BlockType(12, false, false));
-        block_lapis_ore = g.registerBlockType(new BlockType(13, false, false));
-        block_stone = g.registerBlockType(new BlockType(14, false, false));
-
-        final int width = 256;
-        final int height = 256;
-        final int depth = 2;
-        final int[][][] world = new int[depth][height][width];
-        for (int k = 0; k < depth; k++) {
-            for (int j = 0; j < height; j++) {
-                for (int i = 0; i < width; i++) {
-                    world[k][j][i] = block(i, j, k, 64f, 0.1f);
-                }
-            }
-        }
-        g.generateMesh(world, 0, width, height, depth);
-
-        // this is the main loop, it stops when the graphics' window closes
-        while (g.loopOnce()) {
-        }
-
-        // do not forget to destroy all resources after you are done using them
         g.destroy();
     }
 
@@ -220,7 +107,7 @@ public class Graphics {
     private Graphics() {
 
         // Print out the currently used LWJGL version
-        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
+        System.out.println("Hello from LWJGL version " + Version.getVersion());
 
         // Set up an error callback. The default implementation
         // will print the error message in System.err.
@@ -228,6 +115,8 @@ public class Graphics {
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
+
+        System.out.println("Hello from GLFW version " + glfwGetVersionString());
 
         // Init the window //
 
@@ -489,20 +378,30 @@ public class Graphics {
      * @return true while the window has not been closed
      */
     public boolean loopOnce() {
+
+        // Update Input System
+        Input.loopOnce();
+
+        // Set clear color
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+        // Clear Screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Render skybox
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         Renderer.render(m_SkyboxVertexArray, m_SkyboxIndexBuffer, m_SkyboxMaterial);
 
-        glEnable(GL_DEPTH_TEST);
-        Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
-        glDisable(GL_DEPTH_TEST);
-
+        // Render scene
+        if (m_VertexArray != null && m_IndexBuffer != null && m_Material != null) {
+            glEnable(GL_DEPTH_TEST);
+            Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
+            glDisable(GL_DEPTH_TEST);
+        }
         glDisable(GL_BLEND);
 
+        // Do ImGui
         m_ImGuiHelper.loopOnce(() -> {
 
             ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
@@ -541,23 +440,24 @@ public class Graphics {
             ImGui.showDemoWindow();
         });
 
+        // Camera movement
         if (!ImGui.getIO().getWantCaptureKeyboard()) {
             final float speed = ImGui.getIO().getDeltaTime() * 20.0f;
             boolean move = false;
 
-            if (m_Window.getKeyDown(GLFW_KEY_UP)) {
+            if (Input.getKey(Input.KeyCode.UP)) {
                 m_CameraPosition.y += speed;
                 move = true;
             }
-            if (m_Window.getKeyDown(GLFW_KEY_DOWN)) {
+            if (Input.getKey(Input.KeyCode.DOWN)) {
                 m_CameraPosition.y -= speed;
                 move = true;
             }
-            if (m_Window.getKeyDown(GLFW_KEY_RIGHT)) {
+            if (Input.getKey(Input.KeyCode.RIGHT)) {
                 m_CameraPosition.x += speed;
                 move = true;
             }
-            if (m_Window.getKeyDown(GLFW_KEY_LEFT)) {
+            if (Input.getKey(Input.KeyCode.LEFT)) {
                 m_CameraPosition.x -= speed;
                 move = true;
             }
@@ -568,6 +468,7 @@ public class Graphics {
             }
         }
 
+        // Check if window is still open
         return m_Window.loopOnce();
     }
 
@@ -577,13 +478,13 @@ public class Graphics {
     public void destroy() {
         m_Window.close(); // Destroy the window
 
-        m_Atlas.close();
+        if (m_Atlas != null) m_Atlas.close();
         m_ImGuiHelper.close();
 
         m_Material.close();
-        m_VertexArray.close();
-        m_IndexBuffer.close();
-        m_VertexBuffer.close();
+        if (m_VertexArray != null) m_VertexArray.close();
+        if (m_IndexBuffer != null) m_IndexBuffer.close();
+        if (m_VertexBuffer != null) m_VertexBuffer.close();
 
         m_SkyboxMaterial.close();
         m_SkyboxVertexArray.close();
