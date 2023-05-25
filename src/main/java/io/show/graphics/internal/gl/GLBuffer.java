@@ -3,7 +3,11 @@ package io.show.graphics.internal.gl;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL30.glBindBufferBase;
 
+/**
+ * @author Felix Schreiber
+ */
 public class GLBuffer implements AutoCloseable {
 
     private final int m_Handle;
@@ -19,8 +23,18 @@ public class GLBuffer implements AutoCloseable {
         return this;
     }
 
+    public GLBuffer bind(int i) {
+        glBindBufferBase(m_Target, i, m_Handle);
+        return this;
+    }
+
     public GLBuffer unbind() {
         glBindBuffer(m_Target, 0);
+        return this;
+    }
+
+    public GLBuffer unbind(int i) {
+        glBindBufferBase(m_Target, i, 0);
         return this;
     }
 
