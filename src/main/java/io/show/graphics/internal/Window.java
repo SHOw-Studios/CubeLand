@@ -88,7 +88,7 @@ public class Window implements AutoCloseable {
         GL.createCapabilities();
 
         // print the current opengl version
-        System.out.println(glGetString(GL_VERSION));
+        System.out.println("Hello from OpenGL version " + glGetString(GL_VERSION));
 
         // set the background clear color
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);

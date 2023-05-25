@@ -19,8 +19,7 @@ public class Storage {
 
         StringBuilder builder = new StringBuilder();
         String line;
-        while ((line = reader.readLine()) != null)
-            builder.append(line).append('\n');
+        while ((line = reader.readLine()) != null) builder.append(line).append('\n');
 
         return new JSONObject(builder.toString());
     }
@@ -34,8 +33,7 @@ public class Storage {
 
         List<String> list = new Vector<>();
         String line;
-        while ((line = reader.readLine()) != null)
-            list.add(line);
+        while ((line = reader.readLine()) != null) list.add(line);
 
         return list;
     }
@@ -46,20 +44,13 @@ public class Storage {
     public static boolean writeWorld(World world) throws IOException {
         /* Creates World with a class World -> class world needs seed,name, und chunks (int arrays) */
         File dir = new File(SAVES_PATH, world.getName());
-        if (!dir.exists())
-            if (!dir.mkdirs()) return false;
+        if (!dir.exists()) if (!dir.mkdirs()) return false;
 
         File worldFile = new File(dir, "world.json");
         StringBuilder builder = new StringBuilder();
         JSONWriter writer = new JSONWriter(builder);
-        writer.object()
-                .key("name")
-                .value(world.getName())
-                .endObject();
-        writer.object()
-                .key("seed")
-                .value(world.getSeed())
-                .endObject();
+        writer.object().key("name").value(world.getName()).endObject();
+        writer.object().key("seed").value(world.getSeed()).endObject();
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());
@@ -87,7 +78,4 @@ public class Storage {
         fileWriter.close();
         return true;
     }
-
-
-    pu
 }
