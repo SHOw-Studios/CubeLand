@@ -15,12 +15,7 @@ public class Generator {
     private long m_HeightSeed;
     private int m_StartPos;
     private long m_OrelikelynessSeed;
-    private long m_OrehightSeed1;
-    private long m_OrehightSeed2;
-    private long m_WhichOreSeed;
     private int[] graphicArray;
-    private Orelikelikelyness ores = new Orelikelikelyness(m_OrehightSeed1, m_OrehightSeed2,
-            m_OrelikelynessSeed, m_WhichOreSeed);
 
     public Generator(World inputWorld, Chunk inputChunk, int[] graphicArray) {
         HEIGHT = inputChunk.getHEIGHT();
@@ -30,6 +25,8 @@ public class Generator {
         m_HeightSeed = inputWorld.heightSeed;
         m_StartPos = inputChunk.getM_StartPosition();
         this.graphicArray = graphicArray;
+        m_OrelikelynessSeed = inputWorld.orelikelynessSeed;
+        ;
     }
 
 //    public static void print2D(int[][] mat) {
@@ -42,8 +39,6 @@ public class Generator {
     public int[][][] generate() {
         int[][][] Map;
         Map = initMap();
-//        Map = setWater(Map);
-//        Map = ores.setOres(Map);
         return Map;
     }
 
@@ -57,13 +52,17 @@ public class Generator {
         for (int i = 0; i < DEPTH; i++) {
             for (int j = 0; j < HEIGHT; j++) {
                 for (int k = 0; k < WIDTH; k++) {
-                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, xOff + k * scale, i * scale) * 20.0f;
+                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, (xOff + k) * scale, i * scale) * 20.0f;
+                    float orenoise = OpenSimplex2.noise3_ImproveXY(m_OrelikelynessSeed, j * scale, (xOff + k) * scale, i * scale);
                     //-150 to get min 50 Ground and min 100 to build above
                     //+50 to get min 50 Ground
                     float d = noise - j;
                     int roundedNoise = Math.round(noise);
-                    if (d <= 1 && d > 0) MapArray[i][j][k] = graphicArray[5];
-                    else if (d <= 2 && d > 0) MapArray[i][j][k] = graphicArray[4];
+                    if (d <= 2 && d > 0) MapArray[i][j][k] = graphicArray[4];
+                    else if (j < noise && orenoise < -0.6) MapArray[i][j][k] = graphicArray[11];
+                    else if (j < noise && orenoise < -0.5) MapArray[i][j][k] = graphicArray[12];
+                    else if (j < noise && orenoise > 0.6) MapArray[i][j][k] = graphicArray[11];
+                    else if (j < noise && orenoise > 0.5) MapArray[i][j][k] = graphicArray[13];
                     else if (j < noise) MapArray[i][j][k] = graphicArray[14];
                     else {
                         d = HEIGHT / 2 - j;
@@ -77,14 +76,14 @@ public class Generator {
         return MapArray;
     }
 
-    public int[][][] setWater(int[][][] Map) {
-        for (int i = 0; i < Map[0].length; i++) {
-            for (int j = Map[1].length / 2; j < Map[1].length; j++) {
-                if (Map[j][i][0] != 1) Map[j][i][0] = 2;
-                else break;
-            }
-        }
-        return Map;
-    }
+//    public int[][][] setWater(int[][][] Map) {
+//        for (int i = 0; i < Map[0].length; i++) {
+//            for (int j = Map[1].length / 2; j < Map[1].length; j++) {
+//                if (Map[j][i][0] != 1) Map[j][i][0] = 2;
+//                else break;
+//            }
+//        }
+//        return Map;
+//    }
 
 }

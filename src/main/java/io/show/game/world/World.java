@@ -12,9 +12,6 @@ public class World {
     private Random m_Random = new Random();
     public final long heightSeed = m_Random.nextLong();
     public final long orelikelynessSeed = m_Random.nextLong();
-    public final long orehightSeed1 = m_Random.nextLong();
-    public final long orehightSeed2 = m_Random.nextLong();
-    public final long whichOreSeed = m_Random.nextLong();
     public final long treeHeightSeed = m_Random.nextLong();
     public final long treeLikelinessSeed = m_Random.nextLong();
     public final long noodleSeed = m_Random.nextLong();
