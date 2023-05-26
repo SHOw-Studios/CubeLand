@@ -1,6 +1,8 @@
 package io.show.graphics;
 
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -95,15 +97,27 @@ public class Bitmap {
         return m_Data;
     }
 
-    public byte[] getDataAsByteArray() {
+    public byte[] getByteArray() {
         byte[] bytes = new byte[m_Data.length * 4];
         for (int i = 0; i < m_Data.length; i++) {
             int idx = i * 4;
-            bytes[idx] = (byte) (m_Data[i] >>> 16);     // R
-            bytes[idx + 1] = (byte) (m_Data[i] >>> 8);  // G
-            bytes[idx + 2] = (byte) (m_Data[i]);        // B
-            bytes[idx + 3] = (byte) (255.999f * m_Opacity); // A
+            bytes[idx] = (byte) ((m_Data[i] >> 16) & 0xff);         // R
+            bytes[idx + 1] = (byte) ((m_Data[i] >> 8) & 0xff);      // G
+            bytes[idx + 2] = (byte) (m_Data[i] & 0xff);             // B
+            bytes[idx + 3] = (byte) (255.999f * m_Opacity);         // A
         }
         return bytes;
+    }
+
+    public ByteBuffer getByteBuffer() {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(m_Data.length * 4).order(ByteOrder.nativeOrder());
+        for (int c : m_Data) {
+            buffer.put((byte) ((c >> 16) & 0xff));      // R
+            buffer.put((byte) ((c >> 8) & 0xff));       // G
+            buffer.put((byte) (c & 0xff));              // B
+            buffer.put((byte) (255.999f * m_Opacity));  // A
+        }
+        buffer.position(0);
+        return buffer;
     }
 }

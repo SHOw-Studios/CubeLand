@@ -120,7 +120,7 @@ public class Graphics {
 
         // Init the window //
 
-        m_Window = new Window(800, 600, "CubeLand v1.0.0");
+        m_Window = new Window(800, 600, "CubeLand v1.0.0", "res/textures/block/panel/wood_panel.bmp");
         m_Window.setResizeListener(this::onWindowResize);
 
         // Create the material //
@@ -249,7 +249,7 @@ public class Graphics {
             final int x = i % tilesEdgeNum;
             final int y = (i - x) / tilesEdgeNum;
 
-            byte[] data = m_BitmapMap.get(i).getDataAsByteArray();
+            byte[] data = m_BitmapMap.get(i).getByteArray();
 
             atlas.setTile(x, y, buffer.clear().put(data).position(0));
         }

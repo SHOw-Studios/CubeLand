@@ -1,7 +1,7 @@
 package io.show.graphics.internal.gl;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import io.show.storage.Storage;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -185,16 +185,15 @@ public class Shader implements AutoCloseable {
     public static List<ShaderData> parseShaderFile(String path) throws IOException {
         List<ShaderData> shaderDataList = new Vector<>();
 
-        BufferedReader reader = new BufferedReader(new FileReader(path));
+        List<String> source = Storage.readList(path);
 
         StringBuilder src = null;
         String identifier = null;
         int type = -1;
 
         String line;
-        int i = 0;
-        while ((line = reader.readLine()) != null) {
-            i++;
+        for (int i = 0; i < source.size(); i++) {
+            line = source.get(i);
             String[] args = line.split(" ");
             if (args[0].equals("#")) {
                 if (!args[1].equals("shader")) continue;
@@ -219,8 +218,6 @@ public class Shader implements AutoCloseable {
         }
 
         if (src != null) shaderDataList.add(new ShaderData(type, src.toString(), identifier));
-
-        reader.close();
 
         return shaderDataList;
     }
