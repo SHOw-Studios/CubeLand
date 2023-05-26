@@ -1,8 +1,13 @@
 package io.show.graphics.internal;
 
+import io.show.graphics.Bitmap;
+import io.show.storage.Storage;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+
+import java.io.IOException;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -39,7 +44,7 @@ public class Window implements AutoCloseable {
      * @throws IllegalStateException failed to initialize GLFW
      * @throws RuntimeException      failed to create the GLFW window object
      */
-    public Window(int width, int height, CharSequence title) {
+    public Window(int width, int height, CharSequence title, String iconPath) {
 
         // Configure GLFW
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
@@ -67,6 +72,18 @@ public class Window implements AutoCloseable {
             glViewport(0, 0, w, h);
             if (m_ResizeListener != null) m_ResizeListener.call();
         });
+
+        try {
+            Bitmap bitmap = new Bitmap(Storage.readImage(iconPath));
+
+            GLFWImage.Buffer iconImage = GLFWImage.create(1);
+            iconImage.width(bitmap.getWidth());
+            iconImage.height(bitmap.getHeight());
+            iconImage.pixels(bitmap.getByteBuffer());
+            glfwSetWindowIcon(m_Handle, iconImage);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(m_Handle);

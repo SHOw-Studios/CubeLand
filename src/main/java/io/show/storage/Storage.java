@@ -27,6 +27,8 @@ public class Storage {
         String line;
         while ((line = reader.readLine()) != null) builder.append(line).append('\n');
 
+        reader.close();
+
         return new JSONObject(builder.toString());
     }
 
@@ -54,6 +56,8 @@ public class Storage {
         List<String> list = new Vector<>();
         String line;
         while ((line = reader.readLine()) != null) list.add(line);
+
+        reader.close();
 
         return list;
     }
