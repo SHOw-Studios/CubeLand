@@ -40,10 +40,12 @@ public class GameLoop {
 
 
         // you can register graphs that get drawn by ImGui as an overlay
+        /*
         g.registerGraph((x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
         g.registerGraph((x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
         g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
         g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
+        */
 
         final String[] textures = new String[]{ // just a temporary list of paths
 
@@ -111,7 +113,7 @@ public class GameLoop {
         int[] graphicArr = {block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air};
         // World world = Storage.getWorld();
         World world = new World(World.Mapsize.SMALL, graphicArr);
-        
+
         final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getM_Blocks(), world.getChunkAtPos(-1).getM_Blocks(), world.getChunkAtPos(0).getM_Blocks(), world.getChunkAtPos(1).getM_Blocks(), world.getChunkAtPos(2).getM_Blocks());
         g.generateMesh(map, 0, map[0][0].length, map[0].length, map.length);
 
