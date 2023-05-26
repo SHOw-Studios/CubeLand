@@ -1,6 +1,9 @@
 package io.show.graphics;
 
+import io.show.storage.Storage;
+
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -47,6 +50,14 @@ public class Bitmap {
 
     public Bitmap(BufferedImage image) {
         this(image, 1.0f);
+    }
+
+    public Bitmap(String path, float opacity) throws IOException {
+        this(Storage.readImage(path), opacity);
+    }
+
+    public Bitmap(String path) throws IOException {
+        this(path, 1.0f);
     }
 
     public Bitmap resize(int width, int height) {

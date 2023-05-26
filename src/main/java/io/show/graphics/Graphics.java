@@ -11,9 +11,11 @@ import io.show.graphics.internal.gl.Shader;
 import io.show.graphics.internal.gl.TextureAtlas;
 import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
+import io.show.storage.Storage;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.json.JSONObject;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
@@ -32,8 +34,30 @@ import static org.lwjgl.opengl.GL15.*;
  */
 public class Graphics {
 
+    private static void regBitmaps(JSONObject json) throws IOException {
+        if (json.has("path")) {
+            float opacity;
+            if (json.has("opacity")) opacity = json.getFloat("opacity");
+            else opacity = 1.0f;
+            Graphics.getInstance().registerBitmap(new Bitmap(json.getString("path"), opacity));
+            return;
+        }
+
+        for (String key : json.keySet()) {
+            regBitmaps(json.getJSONObject(key));
+        }
+    }
+
     public static void main(String[] args) {
         final Graphics g = Graphics.getInstance();
+
+        try {
+            JSONObject block = Storage.readJson("res/textures/textures.json").getJSONObject("block");
+            regBitmaps(block);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        g.generateTextureAtlas(16, 16);
 
         while (g.loopOnce()) ;
 
@@ -438,6 +462,29 @@ public class Graphics {
             ImGui.end();
 
             ImGui.showDemoWindow();
+
+            if (ImGui.begin("Atlas")) {
+
+                float a = m_Atlas.getWidth() / (float) m_Atlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_Atlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
         });
 
         // Camera movement
