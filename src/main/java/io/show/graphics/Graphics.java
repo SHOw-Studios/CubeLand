@@ -4,13 +4,14 @@ import imgui.ImGui;
 import imgui.extension.implot.ImPlot;
 import imgui.flag.ImGuiDockNodeFlags;
 import io.show.graphics.internal.ImGuiHelper;
-import io.show.graphics.internal.Renderer;
 import io.show.graphics.internal.Window;
-import io.show.graphics.internal.gl.GLBuffer;
 import io.show.graphics.internal.gl.Shader;
 import io.show.graphics.internal.gl.TextureAtlas;
 import io.show.graphics.internal.gl.VertexArray;
 import io.show.graphics.internal.scene.Material;
+import io.show.graphics.internal.scene.Mesh;
+import io.show.graphics.internal.scene.Model;
+import io.show.graphics.internal.scene.QuadMesh;
 import io.show.storage.Storage;
 import org.joml.Math;
 import org.joml.Matrix4f;
@@ -59,7 +60,7 @@ public class Graphics {
         }
         g.generateTextureAtlas(16, 16);
 
-        while (g.loopOnce()) ;
+        while (true) if (!g.loopOnce()) break;
 
         g.destroy();
     }
@@ -107,23 +108,20 @@ public class Graphics {
     private final Window m_Window;
 
     private final List<Bitmap> m_BitmapMap = new Vector<>();
-    private TextureAtlas m_Atlas;
+    private TextureAtlas m_TextureAtlas;
 
-    private final Material m_Material;
-    private VertexArray m_VertexArray;
-    private GLBuffer m_IndexBuffer;
-    private GLBuffer m_VertexBuffer;
+    private final Model m_TerrainModel;
+    private final Model m_SkyboxModel;
+    private final Model m_PlayerModel;
 
-    private final Material m_SkyboxMaterial;
-    private VertexArray m_SkyboxVertexArray;
-    private GLBuffer m_SkyboxIndexBuffer;
-    private GLBuffer m_SkyboxVertexBuffer;
-
-    private final List<GraphInfo> m_GraphMap = new Vector<>();
+    private final List<GraphInfo> m_GraphInfoList = new Vector<>();
     private final ImGuiHelper m_ImGuiHelper;
 
-    private final Vector2f m_CameraPosition = new Vector2f(8.0f, 64.0f);
-    private final List<BlockType> m_BlockTypes = new Vector<>();
+    private final Vector2f m_CameraPosition = new Vector2f(0.0f, 0.0f);
+    private final List<BlockType> m_BlockTypeList = new Vector<>();
+
+    private final Vector2f m_PlayerPosition = new Vector2f(0.0f, 0.0f);
+    private int m_PlayerLayer = 0;
 
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
@@ -142,42 +140,34 @@ public class Graphics {
 
         System.out.println("Hello from GLFW version " + glfwGetVersionString());
 
-        // Init the window //
+        // Window //
 
         m_Window = new Window(800, 600, "CubeLand v1.0.0", "res/textures/block/panel/wood_panel.bmp");
         m_Window.setResizeListener(this::onWindowResize);
 
-        // Create the material //
+        // Models //
+
+        Shader opaqueShader;
+        Shader skyboxShader;
 
         try {
-            m_Material = new Material(new Shader("res/shaders/block/opaque.shader"));
-            m_SkyboxMaterial = new Material(new Shader("res/shaders/misc/skybox.shader"));
+            opaqueShader = new Shader("res/shaders/block/opaque.shader");
+            skyboxShader = new Shader("res/shaders/misc/skybox.shader");
         } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
                  IOException e) {
             throw new RuntimeException(e);
         }
 
+        m_TerrainModel = new Model(new Mesh(), new Material(opaqueShader));
+        m_PlayerModel = new Model(new QuadMesh(), new Material(opaqueShader));
+        m_SkyboxModel = new Model(new QuadMesh(), new Material(skyboxShader));
+
         Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
-        m_Material.getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
 
         onWindowResize(); // Set up the orthographic matrix for the first time
 
-        // Create Skybox //
-
-        final float[] skyboxVertices = new float[]{-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f};
-        ByteBuffer buffer = ByteBuffer.allocateDirect(Float.BYTES * skyboxVertices.length).order(ByteOrder.nativeOrder());
-        buffer.asFloatBuffer().put(skyboxVertices);
-        m_SkyboxVertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
-
-        final int[] skyboxIndices = new int[]{0, 1, 2, 2, 3, 0};
-        buffer = ByteBuffer.allocateDirect(Integer.BYTES * skyboxIndices.length).order(ByteOrder.nativeOrder());
-        buffer.asIntBuffer().put(skyboxIndices);
-        m_SkyboxIndexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_STATIC_DRAW).bind().setData(buffer).unbind();
-
-        final VertexArray.Layout skyboxLayout = new VertexArray.Layout().pushFloat(2);
-        m_SkyboxVertexArray = new VertexArray().bind().bindBuffer(m_SkyboxVertexBuffer, skyboxLayout).unbind();
-
-        // Init and setup ImGui //
+        // ImGui //
 
         m_ImGuiHelper = new ImGuiHelper(m_Window.getHandle(), "#version 460 core");
         m_ImGuiHelper.setDefaultFont("res/fonts/Gothic3.ttf", 16.0f);
@@ -197,8 +187,7 @@ public class Graphics {
         final float a = w / h;
         final float scale = 10.0f;
         Matrix4f mat = new Matrix4f().ortho2D(-a * scale, a * scale, -scale, scale);
-        m_Material.getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
-        m_SkyboxMaterial.getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
+        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
     }
 
     /**
@@ -227,9 +216,9 @@ public class Graphics {
      */
     public int registerGraph(Graph graph, int resolution, float xMin, float xMax, float yMin, float yMax) {
         GraphInfo info = new GraphInfo(xMin, xMax, yMin, yMax, graph, resolution, null);
-        if (m_GraphMap.contains(info)) return m_GraphMap.indexOf(info);
-        m_GraphMap.add(info);
-        return m_GraphMap.size() - 1;
+        if (m_GraphInfoList.contains(info)) return m_GraphInfoList.indexOf(info);
+        m_GraphInfoList.add(info);
+        return m_GraphInfoList.size() - 1;
     }
 
     /**
@@ -242,15 +231,15 @@ public class Graphics {
      */
     public int registerGraph(float[] y, float xMin, float xMax, float yMin, float yMax) {
         GraphInfo info = new GraphInfo(xMin, xMax, yMin, yMax, null, y.length, y);
-        if (m_GraphMap.contains(info)) return m_GraphMap.indexOf(info);
-        m_GraphMap.add(info);
-        return m_GraphMap.size() - 1;
+        if (m_GraphInfoList.contains(info)) return m_GraphInfoList.indexOf(info);
+        m_GraphInfoList.add(info);
+        return m_GraphInfoList.size() - 1;
     }
 
     public int registerBlockType(BlockType blockType) {
-        if (m_BlockTypes.contains(blockType)) return m_BlockTypes.indexOf(blockType);
-        m_BlockTypes.add(blockType);
-        return m_BlockTypes.size() - 1;
+        if (m_BlockTypeList.contains(blockType)) return m_BlockTypeList.indexOf(blockType);
+        m_BlockTypeList.add(blockType);
+        return m_BlockTypeList.size() - 1;
     }
 
     /**
@@ -278,23 +267,28 @@ public class Graphics {
             atlas.setTile(x, y, buffer.clear().put(data).position(0));
         }
 
-        m_Atlas = atlas.unbind();
+        m_TextureAtlas = atlas.unbind();
 
-        m_Material.clearTextures();
-        m_Material.addTexture(m_Atlas.getTexture());
+        m_TerrainModel.getMaterial().clearTextures();
+        m_TerrainModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
 
-        m_Material.getShader().bind().setUniformInt("sampler", 0).unbind();
+        m_TerrainModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
+
+        m_PlayerModel.getMaterial().clearTextures();
+        m_PlayerModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
+
+        m_PlayerModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
 
         return this;
     }
 
-    public Graphics generateMesh(int[][][] world, int xOffset, int width, int height, int depth) {
+    public Graphics generateWorldMesh(int[][][] world, int xOffset, int width, int height, int depth) {
 
-        final int atlasW = m_Atlas.getWidth();
-        final int atlasH = m_Atlas.getHeight();
-        final int atlasTW = m_Atlas.getTileW();
-        final int atlasTH = m_Atlas.getTileH();
-        final int atlasTX = m_Atlas.getTilesX();
+        final int atlasW = m_TextureAtlas.getWidth();
+        final int atlasH = m_TextureAtlas.getHeight();
+        final int atlasTW = m_TextureAtlas.getTileW();
+        final int atlasTH = m_TextureAtlas.getTileH();
+        final int atlasTX = m_TextureAtlas.getTilesX();
 
         final float invW = atlasTW / (float) atlasW;
         final float invH = atlasTH / (float) atlasH;
@@ -310,11 +304,11 @@ public class Graphics {
             for (int j = 0; j < height; j++) {
                 for (int i = 0; i < width; i++) {
 
-                    final BlockType block = m_BlockTypes.get(world[k][j][i]);
+                    final BlockType block = m_BlockTypeList.get(world[k][j][i]);
                     if (block == null) continue; // air
 
                     if (k < depth - 1) {
-                        final BlockType front = m_BlockTypes.get(world[k + 1][j][i]);
+                        final BlockType front = m_BlockTypeList.get(world[k + 1][j][i]);
                         if (front != null && !front.isTransparent) continue; // block is blocked...
                     }
 
@@ -353,24 +347,17 @@ public class Graphics {
             buffer.putFloat(vertex.x()).putFloat(vertex.y()).putFloat(vertex.z()).putFloat(vertex.u()).putFloat(vertex.v());
         }
         buffer.position(0);
-
-        if (m_VertexBuffer == null)
-            m_VertexBuffer = new GLBuffer().setTarget(GL_ARRAY_BUFFER).setUsage(GL_DYNAMIC_DRAW);
-        m_VertexBuffer.bind().setData(buffer).unbind();
+        m_TerrainModel.getMesh().setVertices(buffer);
 
         buffer = ByteBuffer.allocateDirect(indices.size() * Integer.BYTES).order(ByteOrder.nativeOrder());
         for (int index : indices) {
             buffer.putInt(index);
         }
         buffer.position(0);
+        m_TerrainModel.getMesh().setIndices(buffer);
 
-        if (m_IndexBuffer == null)
-            m_IndexBuffer = new GLBuffer().setTarget(GL_ELEMENT_ARRAY_BUFFER).setUsage(GL_DYNAMIC_DRAW);
-        m_IndexBuffer.bind().setData(buffer).unbind();
-
-        if (m_VertexArray == null) m_VertexArray = new VertexArray();
         final VertexArray.Layout layout = new VertexArray.Layout().pushFloat(3).pushFloat(2);
-        m_VertexArray.bind().bindBuffer(m_VertexBuffer, layout).unbind();
+        m_TerrainModel.getMesh().setVertexLayout(layout);
 
         return this;
     }
@@ -383,17 +370,51 @@ public class Graphics {
     }
 
     /**
-     * @return the main material
-     */
-    public Material getMaterial() {
-        return m_Material;
-    }
-
-    /**
      * @return the texture atlas
      */
     public TextureAtlas getAtlas() {
-        return m_Atlas;
+        return m_TextureAtlas;
+    }
+
+    public Vector2f getCameraPosition() {
+        return m_CameraPosition;
+    }
+
+    public Vector2f getPlayerPosition() {
+        return m_PlayerPosition;
+    }
+
+    public int getPlayerLayer() {
+        return m_PlayerLayer;
+    }
+
+    public void moveCamera(Vector2f translation) {
+        m_CameraPosition.add(translation);
+    }
+
+    public void setCameraPosition(Vector2f position) {
+        m_CameraPosition.set(position);
+    }
+
+    public void movePlayer(Vector2f translation) {
+        m_PlayerPosition.add(translation);
+    }
+
+    public void setPlayerPosition(Vector2f position) {
+        m_PlayerPosition.set(position);
+    }
+
+    public void setPlayerLayer(int layer) {
+        m_PlayerLayer = layer;
+    }
+
+    public void updateCamera() {
+        Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
+        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+    }
+
+    public void updatePlayer() {
+
     }
 
     /**
@@ -407,22 +428,33 @@ public class Graphics {
         Input.loopOnce();
 
         // Set clear color
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         // Clear Screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Render skybox
+        // Enable Blending
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        Renderer.render(m_SkyboxVertexArray, m_SkyboxIndexBuffer, m_SkyboxMaterial);
 
-        // Render scene
-        if (m_VertexArray != null && m_IndexBuffer != null && m_Material != null) {
-            glEnable(GL_DEPTH_TEST);
-            Renderer.render(m_VertexArray, m_IndexBuffer, m_Material);
-            glDisable(GL_DEPTH_TEST);
-        }
+        // Render skybox
+        m_SkyboxModel.render();
+
+        // Enable Depth Testing
+        glEnable(GL_DEPTH_TEST);
+
+        // Render player
+        Matrix4f model = new Matrix4f().translate(m_PlayerPosition.x(), m_PlayerPosition.y(), m_PlayerLayer);
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
+        m_PlayerModel.render();
+
+        // Render terrain
+        model = new Matrix4f();
+        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
+        m_TerrainModel.render();
+
+        // Disable Depth Testing and Blending
+        glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
 
         // Do ImGui
@@ -433,8 +465,8 @@ public class Graphics {
             ImGui.begin("Graphs");
             ImGui.beginTabBar("Tabs");
 
-            for (int id = 0; id < m_GraphMap.size(); id++) {
-                final GraphInfo info = m_GraphMap.get(id);
+            for (int id = 0; id < m_GraphInfoList.size(); id++) {
+                final GraphInfo info = m_GraphInfoList.get(id);
 
                 if (ImGui.beginTabItem("Graph #" + id)) {
                     if (ImPlot.beginPlot("Plot #" + id)) {
@@ -463,28 +495,27 @@ public class Graphics {
 
             ImGui.showDemoWindow();
 
-            if (ImGui.begin("Atlas")) {
+            ImGui.begin("Atlas");
 
-                float a = m_Atlas.getWidth() / (float) m_Atlas.getHeight();
+            float a = m_TextureAtlas.getWidth() / (float) m_TextureAtlas.getHeight();
 
-                float ww = ImGui.getContentRegionAvailX();
-                float wh = ImGui.getContentRegionAvailY();
+            float ww = ImGui.getContentRegionAvailX();
+            float wh = ImGui.getContentRegionAvailY();
 
-                int w = 0;
-                int h = 0;
+            int w = 0;
+            int h = 0;
 
-                if (ww < wh) {
-                    w = (int) ww;
-                    h = (int) (ww / a);
-                } else {
-                    w = (int) (wh * a);
-                    h = (int) wh;
-                }
-
-                ImGui.image(m_Atlas.getTexture().getHandle(), w, h);
-
-                ImGui.end();
+            if (ww < wh) {
+                w = (int) ww;
+                h = (int) (ww / a);
+            } else {
+                w = (int) (wh * a);
+                h = (int) wh;
             }
+
+            ImGui.image(m_TextureAtlas.getTexture().getHandle(), w, h);
+
+            ImGui.end();
         });
 
         // Camera movement
@@ -509,10 +540,28 @@ public class Graphics {
                 move = true;
             }
 
-            if (move) {
-                Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
-                m_Material.getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+            if (move) updateCamera();
+
+            move = false;
+
+            if (Input.getKey(Input.KeyCode.W)) {
+                m_PlayerPosition.y += speed;
+                move = true;
             }
+            if (Input.getKey(Input.KeyCode.S)) {
+                m_PlayerPosition.y -= speed;
+                move = true;
+            }
+            if (Input.getKey(Input.KeyCode.D)) {
+                m_PlayerPosition.x += speed;
+                move = true;
+            }
+            if (Input.getKey(Input.KeyCode.A)) {
+                m_PlayerPosition.x -= speed;
+                move = true;
+            }
+
+            if (move) updatePlayer();
         }
 
         // Check if window is still open
@@ -525,18 +574,11 @@ public class Graphics {
     public void destroy() {
         m_Window.close(); // Destroy the window
 
-        if (m_Atlas != null) m_Atlas.close();
+        if (m_TextureAtlas != null) m_TextureAtlas.close();
         m_ImGuiHelper.close();
 
-        m_Material.close();
-        if (m_VertexArray != null) m_VertexArray.close();
-        if (m_IndexBuffer != null) m_IndexBuffer.close();
-        if (m_VertexBuffer != null) m_VertexBuffer.close();
-
-        m_SkyboxMaterial.close();
-        m_SkyboxVertexArray.close();
-        m_SkyboxIndexBuffer.close();
-        m_SkyboxVertexBuffer.close();
+        m_TerrainModel.close();
+        m_SkyboxModel.close();
 
         // Terminate GLFW
         glfwTerminate();

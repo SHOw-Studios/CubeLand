@@ -9,6 +9,8 @@ import org.lwjgl.opengl.GL;
 
 import java.io.IOException;
 
+import static io.show.graphics.internal.Debug.disableDebug;
+import static io.show.graphics.internal.Debug.enableDebug;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -34,6 +36,8 @@ public class Window implements AutoCloseable {
     private IListener m_ResizeListener;
     private Rect m_PreviousState;
     private Mode m_CurrentMode;
+
+    private boolean m_LeftShiftPressed = false, m_RightShiftPressed = false;
 
     /**
      * Create a new Window object with GLFW and a fresh OpenGL context
@@ -61,16 +65,32 @@ public class Window implements AutoCloseable {
 
         // Set up a key callback. It will be called every time a key is pressed, repeated or released.
         glfwSetKeyCallback(m_Handle, (window, key, scancode, action, mods) -> {
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+            switch (key) {
+                case GLFW_KEY_ESCAPE:
+                    if (action == GLFW_RELEASE)
+                        glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+                    break;
 
-            if (key == GLFW_KEY_F11 && action == GLFW_RELEASE)
-                toggleFullscreenMode(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS); // toggle fullscreen mode if f11 key is pressed
+                case GLFW_KEY_F11:
+                    if (action == GLFW_RELEASE)
+                        toggleFullscreenMode(m_LeftShiftPressed || m_RightShiftPressed); // toggle fullscreen mode if f11 key is pressed
+                    break;
+
+                case GLFW_KEY_LEFT_SHIFT:
+                    m_LeftShiftPressed = action == GLFW_PRESS || action == GLFW_REPEAT;
+                    break;
+
+                case GLFW_KEY_RIGHT_SHIFT:
+                    m_RightShiftPressed = action == GLFW_PRESS || action == GLFW_REPEAT;
+                    break;
+            }
         });
         // Set up a resize callback, it will be called every time the window size changes
         glfwSetWindowSizeCallback(m_Handle, (window, w, h) -> {
             glViewport(0, 0, w, h);
             if (m_ResizeListener != null) m_ResizeListener.call();
+        });
+        glfwSetWindowMaximizeCallback(m_Handle, (window, maximized) -> {
         });
 
         try {
@@ -110,8 +130,8 @@ public class Window implements AutoCloseable {
         // set the background clear color
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-        // enable debug messages from opengl api
-        Renderer.enableDebug();
+        // enable debug messages from opengl api (TJesus)
+        enableDebug();
     }
 
     /**
@@ -156,33 +176,34 @@ public class Window implements AutoCloseable {
 
     public Window toggleFullscreenMode(boolean fullscreenWindowed) {
 
-        long monitor = glfwGetWindowMonitor(m_Handle);
-        if (monitor != NULL || m_CurrentMode == Mode.FULLSCREEN_WINDOWED) {
+        if (m_CurrentMode == Mode.WINDOWED) { // make it fullscreen
+            long monitor = getCurrentMonitor(); // get suitable monitor
+            if (monitor == NULL) throw new NullPointerException("monitor is null; might be a bug");
 
-            if (m_PreviousState == null) throw new NullPointerException("previous state is null; might be a bug");
-
-            glfwSetWindowMonitor(m_Handle, NULL, m_PreviousState.x(), m_PreviousState.y(), m_PreviousState.width(), m_PreviousState.height(), GLFW_DONT_CARE);
-
-            m_CurrentMode = Mode.WINDOWED;
-
-        } else {
-
-            monitor = getCurrentMonitor();
-            if (monitor == NULL) {
-                throw new NullPointerException("monitor is null; might be a bug");
-            }
-
-            GLFWVidMode vidMode = glfwGetVideoMode(monitor);
+            GLFWVidMode vidMode = glfwGetVideoMode(monitor); // get monitor state
             if (vidMode == null) throw new NullPointerException("vidMode is null; might be a bug");
 
             int[] mx = new int[1], my = new int[1];
-            glfwGetMonitorPos(monitor, mx, my);
+            glfwGetMonitorPos(monitor, mx, my); // get monitor position
 
-            m_PreviousState = getCurrentState();
+            m_PreviousState = getCurrentState(); // save current state
 
-            glfwSetWindowMonitor(m_Handle, fullscreenWindowed ? NULL : monitor, mx[0], my[0], vidMode.width(), vidMode.height(), vidMode.refreshRate());
+            if (fullscreenWindowed) { // make it only frameless
+                glfwSetWindowAttrib(m_Handle, GLFW_DECORATED, GLFW_FALSE);
+                glfwSetWindowMonitor(m_Handle, NULL, mx[0], my[0], vidMode.width(), vidMode.height(), vidMode.refreshRate()); // apply monitor mode
+                m_CurrentMode = Mode.FULLSCREEN_WINDOWED; // update mode
+            } else { // complete fullscreen please
+                glfwSetWindowMonitor(m_Handle, monitor, mx[0], my[0], vidMode.width(), vidMode.height(), vidMode.refreshRate()); // apply monitor mode
+                m_CurrentMode = Mode.FULLSCREEN; // update mode
+            }
+        } else { // make it windowed
+            if (m_PreviousState == null) throw new NullPointerException("previous state is null; might be a bug");
 
-            m_CurrentMode = fullscreenWindowed ? Mode.FULLSCREEN_WINDOWED : Mode.FULLSCREEN;
+            if (m_CurrentMode == Mode.FULLSCREEN_WINDOWED) glfwSetWindowAttrib(m_Handle, GLFW_DECORATED, GLFW_TRUE);
+
+            glfwSetWindowMonitor(m_Handle, NULL, m_PreviousState.x(), m_PreviousState.y(), m_PreviousState.width(), m_PreviousState.height(), GLFW_DONT_CARE); // remove the monitor handle, restore old state
+
+            m_CurrentMode = Mode.WINDOWED; // update mode
         }
 
         return this;
@@ -254,6 +275,9 @@ public class Window implements AutoCloseable {
 
     @Override
     public void close() {
+        // FreeJesus...
+        disableDebug();
+
         // Free the window callbacks and destroy the window
         glfwFreeCallbacks(m_Handle);
         glfwDestroyWindow(m_Handle);
