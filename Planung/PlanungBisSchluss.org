@@ -1,0 +1,10 @@
+#+TITLE: Planung bis zum 27.06.2023
+#+AUTHOR: Ilian
+#+DATE: 2023-06-13
+
+* Todo [0/2]
+** [ ] Cube
+** [ ] Physiks [0/3]
+*** [ ] test
+*** [ ] test2
+*** [ ] test3
