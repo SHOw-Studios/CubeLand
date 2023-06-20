@@ -1,12 +1,9 @@
 package io.show.game;
 
-import io.show.game.world.Chunk;
 import io.show.game.world.World;
 import io.show.graphics.Bitmap;
 import io.show.graphics.BlockType;
 import io.show.graphics.Graphics;
-import org.joml.Math;
-import org.joml.SimplexNoise;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -115,7 +112,7 @@ public class GameLoop {
         World world = new World(World.Mapsize.SMALL, graphicArr);
 
         final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getM_Blocks(), world.getChunkAtPos(-1).getM_Blocks(), world.getChunkAtPos(0).getM_Blocks(), world.getChunkAtPos(1).getM_Blocks(), world.getChunkAtPos(2).getM_Blocks());
-        g.generateMesh(map, 0, map[0][0].length, map[0].length, map.length);
+        g.generateWorldMesh(map, 0, map[0][0].length, map[0].length, map.length);
 
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
