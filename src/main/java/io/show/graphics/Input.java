@@ -1,5 +1,7 @@
 package io.show.graphics;
 
+import imgui.ImGui;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -323,5 +325,9 @@ public class Input {
 
     public static boolean getKeyRepeat(KeyCode keyCode) {
         return __key_states.get(keyCode).prev && __key_states.get(keyCode).now;
+    }
+
+    public static boolean canUseKeyboard() {
+        return !ImGui.getIO().getWantCaptureKeyboard();
     }
 }
