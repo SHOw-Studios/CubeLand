@@ -327,6 +327,10 @@ public class Input {
         return __key_states.get(keyCode).prev && __key_states.get(keyCode).now;
     }
 
+    public static float getDeltaTime() {
+        return ImGui.getIO().getDeltaTime();
+    }
+
     public static boolean canUseKeyboard() {
         return !ImGui.getIO().getWantCaptureKeyboard();
     }
