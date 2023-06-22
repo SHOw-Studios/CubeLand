@@ -44,6 +44,23 @@ public class Storage {
     }
 
     /**
+     * reads String List with texture paths
+     *
+     * @param paths
+     * @return BufferedImage List
+     * @throws IOException
+     */
+
+    public static List<BufferedImage> readListImage(List<String> paths) throws IOException {
+        List<BufferedImage> imageList = new Vector<>();
+        for (String path : paths) {
+            ImageIO.read(new File(path));
+            imageList.add(ImageIO.read(new File(path)));
+        }
+        return imageList;
+    }
+
+    /**
      * Reads list from storage
      *
      * @param path
