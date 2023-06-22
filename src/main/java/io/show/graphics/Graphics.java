@@ -176,6 +176,8 @@ public class Graphics {
         m_ImGuiHelper.addFont("res/fonts/Oasis-BW0JV.ttf", 16.0f);
         m_ImGuiHelper.addFont("res/fonts/CursedTimerUlil-Aznm.ttf", 14.0f);
         m_ImGuiHelper.updateFonts();
+
+        // Player animations //
     }
 
     /**
@@ -519,7 +521,7 @@ public class Graphics {
         });
 
         // Camera movement
-        if (!ImGui.getIO().getWantCaptureKeyboard()) {
+        /*if (!ImGui.getIO().getWantCaptureKeyboard()) {
             final float speed = ImGui.getIO().getDeltaTime() * 20.0f;
             boolean move = false;
 
@@ -562,7 +564,7 @@ public class Graphics {
             }
 
             if (move) updatePlayer();
-        }
+        }*/
 
         // Check if window is still open
         return m_Window.loopOnce();
