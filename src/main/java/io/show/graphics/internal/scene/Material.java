@@ -37,17 +37,15 @@ public class Material implements AutoCloseable {
 
     public Material bind() {
         m_Shader.bind();
-        int i = GL_TEXTURE0;
-        for (Texture texture : m_Textures)
-            texture.bind(i++);
+        for (int i = 0; i < m_Textures.size(); i++)
+            m_Textures.get(i).bind(i + GL_TEXTURE0);
         return this;
     }
 
     public Material unbind() {
         m_Shader.unbind();
-        int i = GL_TEXTURE0;
-        for (Texture texture : m_Textures)
-            texture.unbind(i++);
+        for (int i = 0; i < m_Textures.size(); i++)
+            m_Textures.get(i).unbind(i + GL_TEXTURE0);
         return this;
     }
 

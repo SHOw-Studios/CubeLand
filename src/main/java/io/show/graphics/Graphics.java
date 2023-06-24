@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -119,11 +118,12 @@ public class Graphics {
     private final List<GraphInfo> m_GraphInfoList = new Vector<>();
     private final ImGuiHelper m_ImGuiHelper;
 
+    private boolean m_Moved = false;
+
     private final Vector2f m_CameraPosition = new Vector2f(0.0f, 0.0f);
     private final List<BlockType> m_BlockTypeList = new Vector<>();
 
-    private final Vector2f m_PlayerPosition = new Vector2f(0.0f, 0.0f);
-    private int m_PlayerLayer = 0;
+    private final Player m_Player = new Player();
 
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
@@ -149,23 +149,28 @@ public class Graphics {
 
         // Models //
 
-        Shader opaqueShader;
+        Shader terrainShader;
         Shader skyboxShader;
+        Shader playerShader;
 
         try {
-            opaqueShader = new Shader("res/shaders/block/opaque.shader");
+            terrainShader = new Shader("res/shaders/block/opaque.shader");
             skyboxShader = new Shader("res/shaders/misc/skybox.shader");
+            playerShader = new Shader("res/shaders/player.shader");
         } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
                  IOException e) {
             throw new RuntimeException(e);
         }
 
-        m_TerrainModel = new Model(new Mesh(), new Material(opaqueShader));
-        m_PlayerModel = new Model(new QuadMesh(), new Material(opaqueShader));
+        m_TerrainModel = new Model(new Mesh(), new Material(terrainShader));
+        m_PlayerModel = new Model(new Mesh(), new Material(playerShader));
         m_SkyboxModel = new Model(new QuadMesh(), new Material(skyboxShader));
 
         Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
-        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        terrainShader.bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        playerShader.bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+
+        m_PlayerModel.getMesh().setVertices(new float[]{0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1}).setIndices(new int[]{0, 1, 2, 2, 3, 0}).setVertexLayout(new VertexArray.Layout().pushFloat(3).pushFloat(2));
 
         onWindowResize(); // Set up the orthographic matrix for the first time
 
@@ -200,9 +205,9 @@ public class Graphics {
         List<Bitmap> bitmaps = new Vector<>();
         int w = 0, h = 0;
 
-        for (Iterator<String> it = animations.keys(); it.hasNext(); ) {
-            String key = it.next();
+        List<String> anim = animations.keySet().stream().sorted().toList();
 
+        for (String key : anim) {
             String path = animations.getJSONObject(key).getString("path");
 
             System.out.println(path);
@@ -232,7 +237,19 @@ public class Graphics {
         m_PlayerModel.getMaterial().clearTextures();
         m_PlayerModel.getMaterial().addTexture(m_PlayerAtlas.getTexture());
 
-        m_PlayerModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
+        m_PlayerModel.getMaterial().getShader().bind()
+
+                .setUniformInt("sampler", 0)
+
+                .setUniformInt("atlas_width", w)
+
+                .setUniformInt("atlas_height", h)
+
+                .setUniformInt("frame_width", frame_width)
+
+                .setUniformInt("frame_height", frame_height)
+
+                .unbind();
     }
 
     /**
@@ -242,9 +259,10 @@ public class Graphics {
         final float w = m_Window.getWidth();
         final float h = m_Window.getHeight();
         final float a = w / h;
-        final float scale = 10.0f;
-        Matrix4f mat = new Matrix4f().ortho2D(-a * scale, a * scale, -scale, scale);
+        final float scale = 8.0f;
+        Matrix4f mat = new Matrix4f().setOrtho2D(-a * scale, a * scale, -scale, scale);
         m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
     }
 
     /**
@@ -433,41 +451,79 @@ public class Graphics {
     }
 
     public Vector2f getPlayerPosition() {
-        return m_PlayerPosition;
+        return m_Player.getPosition();
     }
 
     public int getPlayerLayer() {
-        return m_PlayerLayer;
+        return m_Player.getLayer();
     }
 
-    public void moveCamera(Vector2f translation) {
+    public Graphics moveCamera(Vector2f translation) {
         m_CameraPosition.add(translation);
+        m_Moved = true;
+        return this;
     }
 
-    public void setCameraPosition(Vector2f position) {
+    public Graphics setCameraPosition(Vector2f position) {
         m_CameraPosition.set(position);
+        m_Moved = true;
+        return this;
     }
 
-    public void movePlayer(Vector2f translation) {
-        m_PlayerPosition.add(translation);
+    public Graphics movePlayer(Vector2f translation) {
+        m_Player.getPosition().add(translation);
+        m_Moved = true;
+        return this;
     }
 
-    public void setPlayerPosition(Vector2f position) {
-        m_PlayerPosition.set(position);
+    public Graphics setPlayerPosition(Vector2f position) {
+        m_Player.getPosition().set(position);
+        m_Moved = true;
+        return this;
     }
 
-    public void setPlayerLayer(int layer) {
-        m_PlayerLayer = layer;
+    public Graphics setPlayerLayer(int layer) {
+        m_Player.setLayer(layer);
+        m_Moved = true;
+        return this;
     }
 
     public Graphics updateCamera() {
-        Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
+        Matrix4f view = new Matrix4f().setTranslation(-m_CameraPosition.x(), -m_CameraPosition.y(), 0.0f);
         m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
         return this;
     }
 
     public Graphics updatePlayer() {
+        float sy = 3.0f;
+        float sx = sy * 120.0f / 80.0f;
+        if (m_Player.isLookingLeft()) sx = -sx;
+        Matrix4f model = new Matrix4f().scale(sx, sy, 1.0f).translate(m_Player.getPosition().x() / sx - 0.5f, m_Player.getPosition().y() / sy - 0.5f, m_Player.getLayer() + 0.5f);
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         return this;
+    }
+
+    public Player getPlayer() {
+        return m_Player;
+    }
+
+    private float m_Tick = 0;
+
+    private void updateAnimation() {
+        m_Tick += ImGui.getIO().getDeltaTime();
+        if (m_Tick > 0.1f) {
+            m_Tick = 0;
+            m_Player.nextFrame();
+        }
+
+        m_PlayerModel.getMaterial().getShader().bind()
+
+                .setUniformInt("animation", m_Player.getCurrentAnimation().index())
+
+                .setUniformInt("frame", m_Player.getCurrentFrame())
+
+                .unbind();
     }
 
     /**
@@ -476,6 +532,15 @@ public class Graphics {
      * @return true while the window has not been closed
      */
     public boolean loopOnce() {
+
+        // Update camera and player if necessary
+        if (m_Moved) {
+            updateCamera();
+            updatePlayer();
+            m_Moved = false;
+        }
+
+        updateAnimation();
 
         // Update Input System
         Input.loopOnce();
@@ -497,13 +562,9 @@ public class Graphics {
         glEnable(GL_DEPTH_TEST);
 
         // Render player
-        Matrix4f model = new Matrix4f().translate(m_PlayerPosition.x(), m_PlayerPosition.y(), m_PlayerLayer);
-        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         m_PlayerModel.render();
 
         // Render terrain
-        model = new Matrix4f();
-        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         m_TerrainModel.render();
 
         // Disable Depth Testing and Blending
@@ -597,51 +658,17 @@ public class Graphics {
             }
         });
 
-        // Camera movement
-        /*if (!ImGui.getIO().getWantCaptureKeyboard()) {
-            final float speed = ImGui.getIO().getDeltaTime() * 20.0f;
-            boolean move = false;
+        if (Input.getKeyPress(Input.KeyCode.L)) {
+            m_Player.setLookingLeft(!m_Player.isLookingLeft());
+            updatePlayer();
+        }
 
-            if (Input.getKey(Input.KeyCode.UP)) {
-                m_CameraPosition.y += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.DOWN)) {
-                m_CameraPosition.y -= speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.RIGHT)) {
-                m_CameraPosition.x += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.LEFT)) {
-                m_CameraPosition.x -= speed;
-                move = true;
-            }
-
-            if (move) updateCamera();
-
-            move = false;
-
-            if (Input.getKey(Input.KeyCode.W)) {
-                m_PlayerPosition.y += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.S)) {
-                m_PlayerPosition.y -= speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.D)) {
-                m_PlayerPosition.x += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.A)) {
-                m_PlayerPosition.x -= speed;
-                move = true;
-            }
-
-            if (move) updatePlayer();
-        }*/
+        if (Input.getKeyPress(Input.KeyCode.K)) {
+            int animation = m_Player.getCurrentAnimation().index();
+            animation++;
+            if (animation > 29) animation = 0;
+            m_Player.setCurrentAnimation(Player.animationFromIndex(animation));
+        }
 
         // Check if window is still open
         return m_Window.loopOnce();
@@ -654,10 +681,13 @@ public class Graphics {
         m_Window.close(); // Destroy the window
 
         if (m_TerrainAtlas != null) m_TerrainAtlas.close();
+        if (m_PlayerAtlas != null) m_PlayerAtlas.close();
+
         m_ImGuiHelper.close();
 
         m_TerrainModel.close();
         m_SkyboxModel.close();
+        m_PlayerModel.close();
 
         // Terminate GLFW
         glfwTerminate();
