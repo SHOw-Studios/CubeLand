@@ -37,6 +37,8 @@ public class GameLoop {
         // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
+        int offset = (int) -2.5 * Chunk.getWIDTH();
+        //TODO set Player pos to avg terrain height
 
         // you can register graphs that get drawn by ImGui as an overlay
         /*
@@ -113,10 +115,9 @@ public class GameLoop {
         // World world = Storage.getWorld();
         World world = new World(World.Mapsize.SMALL, graphicArr);
 
-        g.setPlayerPosition(new Vector2f(5.0f * Chunk.getWIDTH() / 2, Constants.MAP_SMALL_HEIGHT));
-
         final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getM_Blocks(), world.getChunkAtPos(-1).getM_Blocks(), world.getChunkAtPos(0).getM_Blocks(), world.getChunkAtPos(1).getM_Blocks(), world.getChunkAtPos(2).getM_Blocks());
-        g.generateWorldMesh(map, 0, map[0][0].length, map[0].length, map.length);
+
+        g.generateWorldMesh(map, offset, map[0][0].length, map[0].length, map.length);
 
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
@@ -149,6 +150,8 @@ public class GameLoop {
                 }
                 if (move) g.updateCamera();
             }
+
+//            if(g.getPlayerPosition().x() <= )
         }
 
         // do not forget to destroy all resources after you are done using them
