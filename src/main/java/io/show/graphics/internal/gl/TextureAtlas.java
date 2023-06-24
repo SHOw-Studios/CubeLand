@@ -49,6 +49,11 @@ public class TextureAtlas implements AutoCloseable {
         return this;
     }
 
+    public TextureAtlas setTiles(int tileX, int tileY, int tileN, ByteBuffer data) {
+        m_Texture.setData(tileX * m_TileW, tileY * m_TileH, tileN * m_TileW, m_TileH, data);
+        return this;
+    }
+
     public int getWidth() {
         return m_Texture.getWidth();
     }

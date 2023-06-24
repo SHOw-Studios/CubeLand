@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -108,7 +109,8 @@ public class Graphics {
     private final Window m_Window;
 
     private final List<Bitmap> m_BitmapMap = new Vector<>();
-    private TextureAtlas m_TextureAtlas;
+    private TextureAtlas m_TerrainAtlas;
+    private TextureAtlas m_PlayerAtlas;
 
     private final Model m_TerrainModel;
     private final Model m_SkyboxModel;
@@ -178,6 +180,59 @@ public class Graphics {
         m_ImGuiHelper.updateFonts();
 
         // Player animations //
+        try {
+            registerPlayerAnimations();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void registerPlayerAnimations() throws IOException {
+        JSONObject player = Storage.readJson("res/textures/textures.json").getJSONObject("player");
+
+        int frame_width = player.getInt("frame_width");
+        int frame_height = player.getInt("frame_height");
+
+        System.out.printf("frame_width: %d, frame_height: %d%n", frame_width, frame_height);
+
+        JSONObject animations = player.getJSONObject("animations");
+
+        List<Bitmap> bitmaps = new Vector<>();
+        int w = 0, h = 0;
+
+        for (Iterator<String> it = animations.keys(); it.hasNext(); ) {
+            String key = it.next();
+
+            String path = animations.getJSONObject(key).getString("path");
+
+            System.out.println(path);
+
+            Bitmap bitmap = new Bitmap(Storage.readImage(path));
+
+            w = Math.max(w, bitmap.getWidth());
+            h += frame_height;
+
+            bitmaps.add(bitmap);
+        }
+
+        final int nx = w / frame_width;
+        final int ny = h / frame_height;
+        final TextureAtlas atlas = new TextureAtlas(frame_width, frame_height, nx, ny, 0x00000000).bind();
+
+        int y = 0;
+        for (final Bitmap bitmap : bitmaps) {
+            final int bw = bitmap.getWidth();
+
+            ByteBuffer buffer = bitmaps.get(y).getByteBuffer();
+            atlas.setTiles(0, y++, bw / frame_width, buffer);
+        }
+
+        m_PlayerAtlas = atlas.unbind();
+
+        m_PlayerModel.getMaterial().clearTextures();
+        m_PlayerModel.getMaterial().addTexture(m_PlayerAtlas.getTexture());
+
+        m_PlayerModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
     }
 
     /**
@@ -269,28 +324,23 @@ public class Graphics {
             atlas.setTile(x, y, buffer.clear().put(data).position(0));
         }
 
-        m_TextureAtlas = atlas.unbind();
+        m_TerrainAtlas = atlas.unbind();
 
         m_TerrainModel.getMaterial().clearTextures();
-        m_TerrainModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
+        m_TerrainModel.getMaterial().addTexture(m_TerrainAtlas.getTexture());
 
         m_TerrainModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
-
-        m_PlayerModel.getMaterial().clearTextures();
-        m_PlayerModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
-
-        m_PlayerModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
 
         return this;
     }
 
     public Graphics generateWorldMesh(int[][][] world, int xOffset, int width, int height, int depth) {
 
-        final int atlasW = m_TextureAtlas.getWidth();
-        final int atlasH = m_TextureAtlas.getHeight();
-        final int atlasTW = m_TextureAtlas.getTileW();
-        final int atlasTH = m_TextureAtlas.getTileH();
-        final int atlasTX = m_TextureAtlas.getTilesX();
+        final int atlasW = m_TerrainAtlas.getWidth();
+        final int atlasH = m_TerrainAtlas.getHeight();
+        final int atlasTW = m_TerrainAtlas.getTileW();
+        final int atlasTH = m_TerrainAtlas.getTileH();
+        final int atlasTX = m_TerrainAtlas.getTilesX();
 
         final float invW = atlasTW / (float) atlasW;
         final float invH = atlasTH / (float) atlasH;
@@ -375,7 +425,7 @@ public class Graphics {
      * @return the texture atlas
      */
     public TextureAtlas getAtlas() {
-        return m_TextureAtlas;
+        return m_TerrainAtlas;
     }
 
     public Vector2f getCameraPosition() {
@@ -410,13 +460,14 @@ public class Graphics {
         m_PlayerLayer = layer;
     }
 
-    public void updateCamera() {
+    public Graphics updateCamera() {
         Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
         m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        return this;
     }
 
-    public void updatePlayer() {
-
+    public Graphics updatePlayer() {
+        return this;
     }
 
     /**
@@ -497,27 +548,53 @@ public class Graphics {
 
             ImGui.showDemoWindow();
 
-            ImGui.begin("Atlas");
+            {
+                ImGui.begin("Atlas");
 
-            float a = m_TextureAtlas.getWidth() / (float) m_TextureAtlas.getHeight();
+                float a = m_TerrainAtlas.getWidth() / (float) m_TerrainAtlas.getHeight();
 
-            float ww = ImGui.getContentRegionAvailX();
-            float wh = ImGui.getContentRegionAvailY();
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
 
-            int w = 0;
-            int h = 0;
+                int w = 0;
+                int h = 0;
 
-            if (ww < wh) {
-                w = (int) ww;
-                h = (int) (ww / a);
-            } else {
-                w = (int) (wh * a);
-                h = (int) wh;
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_TerrainAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
             }
 
-            ImGui.image(m_TextureAtlas.getTexture().getHandle(), w, h);
+            {
+                ImGui.begin("Player Atlas");
 
-            ImGui.end();
+                float a = m_PlayerAtlas.getWidth() / (float) m_PlayerAtlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_PlayerAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
         });
 
         // Camera movement
@@ -576,7 +653,7 @@ public class Graphics {
     public void destroy() {
         m_Window.close(); // Destroy the window
 
-        if (m_TextureAtlas != null) m_TextureAtlas.close();
+        if (m_TerrainAtlas != null) m_TerrainAtlas.close();
         m_ImGuiHelper.close();
 
         m_TerrainModel.close();
