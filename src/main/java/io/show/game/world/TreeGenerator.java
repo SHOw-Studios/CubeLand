@@ -2,12 +2,10 @@ package io.show.game.world;
 
 import vendor.opensimplex2.OpenSimplex2;
 
-import java.util.Random;
-
 public class TreeGenerator {
     public TreeGenerator(World world) {
-        m_HeightSeed = world.treeHeightSeed;
-        m_LikelinessSeed = world.treeLikelinessSeed;
+        m_HeightSeed = world.m_TreeHeightSeed;
+        m_LikelinessSeed = world.m_TreeLikelinessSeed;
     }
 
     private long m_HeightSeed;

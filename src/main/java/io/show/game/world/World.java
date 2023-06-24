@@ -1,47 +1,52 @@
 package io.show.game.world;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
-import java.util.Vector;
-import java.util.*;
 
 public class World {
-    private int WIDTH;
-    private int HEIGHT;
-    private int chunk0 = 2;
-    private Random m_Random = new Random();
-    public final long heightSeed = m_Random.nextLong();
-    public final long orelikelynessSeed = m_Random.nextLong();
-    public final long treeHeightSeed = m_Random.nextLong();
-    public final long treeLikelinessSeed = m_Random.nextLong();
-    public final long noodleSeed = m_Random.nextLong();
-    public final long cheeseSeed = m_Random.nextLong();
-    public List<Chunk> Map = new Vector<>();
+    private int m_Width;
+    private int m_Height;
+    private final Random m_Random = new Random();
+    public final long m_HeightSeed = m_Random.nextLong();
+    public final long m_OreLikelinessSeed = m_Random.nextLong();
+    public final long m_TreeHeightSeed = m_Random.nextLong();
+    public final long m_TreeLikelinessSeed = m_Random.nextLong();
+    public final long m_NoodleSeed = m_Random.nextLong();
+    public final long m_CheeseSeed = m_Random.nextLong();
+    public Map<Integer, Chunk> m_Chunks = new HashMap<>();
 
-    public enum Mapsize {LARGE, MEDIUM, SMALL}
+    public enum MapSize {LARGE, MEDIUM, SMALL}
 
-    public World(Mapsize mapsize, int[] graphicArr) {
+    public World(MapSize mapsize, int[] blockTypes) {
         switch (mapsize) {
             case MEDIUM -> {
-                WIDTH = Constants.MAP_MEDIUM_WIDTH;
-                HEIGHT = Constants.MAP_MEDIUM_HEIGHT;
+                m_Width = Constants.MAP_MEDIUM_WIDTH;
+                m_Height = Constants.MAP_MEDIUM_HEIGHT;
             }
             case LARGE -> {
-                WIDTH = Constants.MAP_LARGE_WIDTH;
-                HEIGHT = Constants.MAP_LARGE_HEIGHT;
+                m_Width = Constants.MAP_LARGE_WIDTH;
+                m_Height = Constants.MAP_LARGE_HEIGHT;
             }
             case SMALL -> {
-                WIDTH = Constants.MAP_SMALL_WIDTH;
-                HEIGHT = Constants.MAP_SMALL_HEIGHT;
+                m_Width = Constants.MAP_SMALL_WIDTH;
+                m_Height = Constants.MAP_SMALL_HEIGHT;
             }
         }
-        for (int i = 0; i < WIDTH / 16; i++) {
-            Map.add(new Chunk(HEIGHT, i * 16, this, graphicArr));
-        }
+        for (int i = 0; i < m_Width; i += Chunk.getWidth())
+            m_Chunks.put(i / Chunk.getWidth(), new Chunk(m_Height, i, this, blockTypes));
     }
 
     public Chunk getChunkAtPos(int pos) {
-        return Map.get(pos + chunk0);
+        return m_Chunks.get(pos / Chunk.getWidth());
+    }
+
+    public int getChunkIndexAtPos(int pos) {
+        return pos / Chunk.getWidth();
+    }
+
+    public Chunk getChunk(int index) {
+        return m_Chunks.get(index);
     }
 
 //    public static void main(String[] args) {
@@ -113,6 +118,30 @@ public class World {
 
 
         return result;
+    }
+
+    /**
+     * make a 3d array containing the given chunks inclusively
+     *
+     * @param startChunk first chunk inclusive
+     * @param endChunk   last chunk inclusive
+     * @return a 3d world array
+     */
+    public int[][][] makeWorldArray(int startChunk, int endChunk) {
+        int span = endChunk - startChunk + 1;
+
+        int[][][] world = new int[Chunk.getDepth()][m_Height][Chunk.getWidth() * span];
+
+        for (int c = 0; c < span; c++) {
+            Chunk chunk = m_Chunks.get(c + startChunk);
+            int[][][] blocks = chunk.getBlocks();
+
+            for (int k = 0; k < Chunk.getDepth(); k++)
+                for (int j = 0; j < chunk.getHeight(); j++)
+                    System.arraycopy(blocks[k][j], 0, world[k][j], c * Chunk.getWidth(), Chunk.getWidth());
+        }
+
+        return world;
     }
 
 }

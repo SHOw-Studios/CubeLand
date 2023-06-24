@@ -1,6 +1,5 @@
 package io.show.game.world;
 
-import org.joml.SimplexNoise;
 import vendor.opensimplex2.OpenSimplex2;
 
 import java.util.Random;
@@ -18,14 +17,14 @@ public class Generator {
     private int[] graphicArray;
 
     public Generator(World inputWorld, Chunk inputChunk, int[] graphicArray) {
-        HEIGHT = inputChunk.getHEIGHT();
-        WIDTH = inputChunk.getWIDTH();
-        DEPTH = inputChunk.getDEPTH();
-        xOff = inputChunk.getM_StartPosition();
-        m_HeightSeed = inputWorld.heightSeed;
-        m_StartPos = inputChunk.getM_StartPosition();
+        HEIGHT = inputChunk.getHeight();
+        WIDTH = inputChunk.getWidth();
+        DEPTH = inputChunk.getDepth();
+        xOff = inputChunk.getStartPosition();
+        m_HeightSeed = inputWorld.m_HeightSeed;
+        m_StartPos = inputChunk.getStartPosition();
         this.graphicArray = graphicArray;
-        m_OrelikelynessSeed = inputWorld.orelikelynessSeed;
+        m_OrelikelynessSeed = inputWorld.m_OreLikelinessSeed;
         ;
     }
 
