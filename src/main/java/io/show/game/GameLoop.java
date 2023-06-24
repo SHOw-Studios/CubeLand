@@ -1,9 +1,15 @@
 package io.show.game;
 
+import imgui.ImGui;
+import io.show.game.world.Chunk;
+import io.show.game.world.Constants;
 import io.show.game.world.World;
 import io.show.graphics.Bitmap;
 import io.show.graphics.BlockType;
 import io.show.graphics.Graphics;
+import io.show.graphics.Input;
+import io.show.storage.Storage;
+import org.joml.Vector2f;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -26,10 +32,6 @@ public class GameLoop {
 //        if (d > 0) return block_water;
 //        return block_air;
 //    }
-
-    public static void main(String[] args) {
-        new GameLoop().init();
-    }
 
     public void init() {
         // get the graphics instance
@@ -111,11 +113,42 @@ public class GameLoop {
         // World world = Storage.getWorld();
         World world = new World(World.Mapsize.SMALL, graphicArr);
 
+        g.setPlayerPosition(new Vector2f(5.0f * Chunk.getWIDTH() / 2, Constants.MAP_SMALL_HEIGHT));
+
         final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getM_Blocks(), world.getChunkAtPos(-1).getM_Blocks(), world.getChunkAtPos(0).getM_Blocks(), world.getChunkAtPos(1).getM_Blocks(), world.getChunkAtPos(2).getM_Blocks());
         g.generateWorldMesh(map, 0, map[0][0].length, map[0].length, map.length);
 
+        g.setCameraPosition(g.getPlayerPosition());
+        g.updateCamera();
+        g.updatePlayer();
+
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
+            if (!ImGui.getIO().getWantCaptureKeyboard()) {
+                final float speed = Input.getDeltaTime() * 15.0f;
+                boolean move = false;
+                if (Input.getKey(Input.KeyCode.W) || Input.getKey(Input.KeyCode.UP)) {
+                    g.moveCamera(new Vector2f(0, speed));
+                    g.movePlayer(new Vector2f(0, speed));
+                    move = true;
+                }
+                if (Input.getKey(Input.KeyCode.S) || Input.getKey(Input.KeyCode.DOWN)) {
+                    g.moveCamera(new Vector2f(0, -speed));
+                    g.movePlayer(new Vector2f(0, -speed));
+                    move = true;
+                }
+                if (Input.getKey(Input.KeyCode.A) || Input.getKey(Input.KeyCode.LEFT)) {
+                    g.moveCamera(new Vector2f(-speed, 0));
+                    g.movePlayer(new Vector2f(-speed, 0));
+                    move = true;
+                }
+                if (Input.getKey(Input.KeyCode.D) || Input.getKey(Input.KeyCode.RIGHT)) {
+                    g.moveCamera(new Vector2f(speed, 0));
+                    g.movePlayer(new Vector2f(speed, 0));
+                    move = true;
+                }
+                if (move) g.updateCamera();
+            }
         }
 
         // do not forget to destroy all resources after you are done using them
