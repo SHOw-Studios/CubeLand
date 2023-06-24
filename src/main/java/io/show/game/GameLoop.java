@@ -37,7 +37,7 @@ public class GameLoop {
         // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
-        int offset = (int) -2.5 * Chunk.getWIDTH();
+        int offset = (int) -2.5 * Chunk.getWidth();
         //TODO set Player pos to avg terrain height
 
         // you can register graphs that get drawn by ImGui as an overlay
@@ -113,9 +113,9 @@ public class GameLoop {
 
         int[] graphicArr = {block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air};
         // World world = Storage.getWorld();
-        World world = new World(World.Mapsize.SMALL, graphicArr);
+        World world = new World(World.MapSize.SMALL, graphicArr);
 
-        final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getM_Blocks(), world.getChunkAtPos(-1).getM_Blocks(), world.getChunkAtPos(0).getM_Blocks(), world.getChunkAtPos(1).getM_Blocks(), world.getChunkAtPos(2).getM_Blocks());
+        final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getBlocks(), world.getChunkAtPos(-1).getBlocks(), world.getChunkAtPos(0).getBlocks(), world.getChunkAtPos(1).getBlocks(), world.getChunkAtPos(2).getBlocks());
 
         g.generateWorldMesh(map, offset, map[0][0].length, map[0].length, map.length);
 
