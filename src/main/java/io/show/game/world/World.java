@@ -14,7 +14,8 @@ public class World {
     public final long m_TreeLikelinessSeed = m_Random.nextLong();
     public final long m_NoodleSeed = m_Random.nextLong();
     public final long m_CheeseSeed = m_Random.nextLong();
-    public Map<Integer, Chunk> m_Chunks = new HashMap<>();
+    private final Map<Integer, Chunk> m_Chunks = new HashMap<>();
+    private final int[] m_BlockTypes;
 
     public enum MapSize {LARGE, MEDIUM, SMALL}
 
@@ -33,6 +34,9 @@ public class World {
                 m_Height = Constants.MAP_SMALL_HEIGHT;
             }
         }
+
+        m_BlockTypes = blockTypes;
+
         for (int i = 0; i < m_Width; i += Chunk.getWidth())
             m_Chunks.put(i / Chunk.getWidth(), new Chunk(m_Height, i, this, blockTypes));
     }
@@ -134,6 +138,12 @@ public class World {
 
         for (int c = 0; c < span; c++) {
             Chunk chunk = m_Chunks.get(c + startChunk);
+
+            if (chunk == null) {
+                m_Chunks.put(c + startChunk, new Chunk(m_Height, c + startChunk, this, m_BlockTypes));
+                chunk = m_Chunks.get(c + startChunk);
+            }
+
             int[][][] blocks = chunk.getBlocks();
 
             for (int k = 0; k < Chunk.getDepth(); k++)
