@@ -33,8 +33,8 @@ public class Chunk {
         return WIDTH;
     }
 
-    public Chunk(int height, int startPosition, World parentWorld, int[] graphicArray) {
-        m_Height = height;
+    public Chunk(int startPosition, World parentWorld, int[] graphicArray) {
+        m_Height = parentWorld.getHeight();
         m_StartPosition = startPosition;
         m_ParentWorld = parentWorld;
         Generator generator = new Generator(parentWorld, this, graphicArray);

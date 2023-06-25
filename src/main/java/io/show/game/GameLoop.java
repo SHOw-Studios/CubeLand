@@ -37,7 +37,7 @@ public class GameLoop {
         // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
-        int offset = (int) -2.5 * Chunk.getWidth();
+        int offset = 0;
         //TODO set Player pos to avg terrain height
 
         // you can register graphs that get drawn by ImGui as an overlay
@@ -115,10 +115,13 @@ public class GameLoop {
         // World world = Storage.getWorld();
         World world = new World(World.MapSize.SMALL, graphicArr);
 
-        final int[][][] map = World.append_5_3DArrays(world.getChunkAtPos(-2).getBlocks(), world.getChunkAtPos(-1).getBlocks(), world.getChunkAtPos(0).getBlocks(), world.getChunkAtPos(1).getBlocks(), world.getChunkAtPos(2).getBlocks());
+        int[][][] map = world.makeWorldArray(0, 6);
 
-        g.generateWorldMesh(map, offset, map[0][0].length, map[0].length, map.length);
+        g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
 
+        int lastChunk = (int) (g.getPlayerPosition().x() / 16);
+
+        g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), 0f));
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
         g.updatePlayer();
@@ -148,10 +151,23 @@ public class GameLoop {
                     g.movePlayer(new Vector2f(speed, 0));
                     move = true;
                 }
+                if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
+                    world.m_Chunks.put(lastChunk - 4, new Chunk(lastChunk - 4, world, graphicArr));
+                    offset--;
+                    lastChunk = world.getChunkIndexAtPos((int) g.getPlayerPosition().x());
+                    map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);
+                    g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
+                }
+                if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) > lastChunk) {
+                    world.m_Chunks.put(lastChunk + 4, new Chunk(lastChunk + 4, world, graphicArr));
+                    offset++;
+                    lastChunk = world.getChunkIndexAtPos((int) g.getPlayerPosition().x());
+                    map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);
+                    g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
+                }
                 if (move) g.updateCamera();
             }
 
-//            if(g.getPlayerPosition().x() <= )
         }
 
         // do not forget to destroy all resources after you are done using them

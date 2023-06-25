@@ -6,6 +6,8 @@ import java.util.Random;
 
 public class World {
     private int m_Width;
+
+
     private int m_Height;
     private final Random m_Random = new Random();
     public final long m_HeightSeed = m_Random.nextLong();
@@ -33,8 +35,8 @@ public class World {
                 m_Height = Constants.MAP_SMALL_HEIGHT;
             }
         }
-        for (int i = 0; i < m_Width; i += Chunk.getWidth())
-            m_Chunks.put(i / Chunk.getWidth(), new Chunk(m_Height, i, this, blockTypes));
+        for (int i = 0; i <= 6; i++)
+            m_Chunks.put(i, new Chunk(i, this, blockTypes));
     }
 
     public Chunk getChunkAtPos(int pos) {
@@ -47,6 +49,10 @@ public class World {
 
     public Chunk getChunk(int index) {
         return m_Chunks.get(index);
+    }
+
+    public int getHeight() {
+        return m_Height;
     }
 
 //    public static void main(String[] args) {
@@ -66,6 +72,7 @@ public class World {
 //        }
 //    }
 
+    /*
     public static int[][][] append_5_3DArrays(int[][][] arr1, int[][][] arr2, int[][][] arr3, int[][][] arr4, int[][][] arr5) {
         int depth = arr1.length;
         int chunkWidth = arr1[0][0].length;
@@ -119,6 +126,7 @@ public class World {
 
         return result;
     }
+*/
 
     /**
      * make a 3d array containing the given chunks inclusively
