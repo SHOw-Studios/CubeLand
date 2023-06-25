@@ -3,6 +3,7 @@ package io.show.graphics;
 import imgui.ImGui;
 import imgui.extension.implot.ImPlot;
 import imgui.flag.ImGuiDockNodeFlags;
+import imgui.type.ImBoolean;
 import io.show.graphics.internal.ImGuiHelper;
 import io.show.graphics.internal.Window;
 import io.show.graphics.internal.gl.Shader;
@@ -125,6 +126,15 @@ public class Graphics {
 
     private final Player m_Player = new Player();
 
+    private final ImBoolean m_ShowSettingsWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowDemoWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowGraphWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowPlayerAtlasWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowTerrainAtlasWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowDebugInfoWindow = new ImBoolean(false);
+
+    private final LogWindow m_DebugInfoWindow = new LogWindow();
+
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
      */
@@ -132,6 +142,7 @@ public class Graphics {
 
         // Print out the currently used LWJGL version
         System.out.println("Hello from LWJGL version " + Version.getVersion());
+        m_DebugInfoWindow.logf("Hello from LWJGL version %s%n", Version.getVersion());
 
         // Set up an error callback. The default implementation
         // will print the error message in System.err.
@@ -141,6 +152,7 @@ public class Graphics {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
         System.out.println("Hello from GLFW version " + glfwGetVersionString());
+        m_DebugInfoWindow.logf("Hello from GLFW version %s%n", glfwGetVersionString());
 
         // Window //
 
@@ -199,6 +211,7 @@ public class Graphics {
         int frame_height = player.getInt("frame_height");
 
         System.out.printf("frame_width: %d, frame_height: %d%n", frame_width, frame_height);
+        m_DebugInfoWindow.logf("frame_width: %d, frame_height: %d%n", frame_width, frame_height);
 
         JSONObject animations = player.getJSONObject("animations");
 
@@ -211,6 +224,7 @@ public class Graphics {
             String path = animations.getJSONObject(key).getString("path");
 
             System.out.println(path);
+            m_DebugInfoWindow.logf("animation at %s%n", path);
 
             Bitmap bitmap = new Bitmap(Storage.readImage(path));
 
@@ -508,6 +522,10 @@ public class Graphics {
         return m_Player;
     }
 
+    public LogWindow getDebugInfoWindow() {
+        return m_DebugInfoWindow;
+    }
+
     private float m_Tick = 0;
 
     private void updateAnimation() {
@@ -524,6 +542,109 @@ public class Graphics {
                 .setUniformInt("frame", m_Player.getCurrentFrame())
 
                 .unbind();
+    }
+
+    private void updateGUI() {
+        m_ImGuiHelper.loopOnce(() -> {
+
+            if (Input.canUseKeyboard())
+                if (Input.getKeyRelease(Input.KeyCode.O)) m_ShowSettingsWindow.set(!m_ShowSettingsWindow.get());
+
+            ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+
+            if (m_ShowSettingsWindow.get() && ImGui.begin("Settings", m_ShowSettingsWindow)) {
+                ImGui.checkbox("Show Demo", m_ShowDemoWindow);
+                ImGui.checkbox("Show Graphs", m_ShowGraphWindow);
+                ImGui.checkbox("Show Terrain Atlas", m_ShowTerrainAtlasWindow);
+                ImGui.checkbox("Show Player Atlas", m_ShowPlayerAtlasWindow);
+                ImGui.checkbox("Show Debug Info", m_ShowDebugInfoWindow);
+
+                ImGui.end();
+            }
+
+            if (m_ShowDemoWindow.get()) ImGui.showDemoWindow(m_ShowDemoWindow);
+
+            if (m_ShowGraphWindow.get() && ImGui.begin("Graphs", m_ShowGraphWindow)) {
+
+                ImGui.beginTabBar("Tabs");
+
+                for (int id = 0; id < m_GraphInfoList.size(); id++) {
+                    final GraphInfo info = m_GraphInfoList.get(id);
+
+                    if (ImGui.beginTabItem("Graph #" + id)) {
+                        if (ImPlot.beginPlot("Plot #" + id)) {
+                            final int res = info.resolution();
+                            final float invRes = 1.0f / (res - 1.0f);
+
+                            final Float[] xa = new Float[res];
+                            final Float[] ya = new Float[res];
+
+                            for (int i = 0; i < res; i++) {
+                                final float x = (info.xMax() - info.xMin()) * invRes * i + info.xMin();
+                                final float y = (info.yMax() - info.yMin()) * (info.graph() != null ? info.graph().at(x) : info.y() != null ? info.y()[i] : 0.0f) + info.yMin();
+                                xa[i] = x;
+                                ya[i] = y;
+                            }
+
+                            ImPlot.plotLine("Graph", xa, ya);
+                            ImPlot.endPlot();
+                        }
+                        ImGui.endTabItem();
+                    }
+                }
+
+                ImGui.endTabBar();
+                ImGui.end();
+            }
+
+            if (m_ShowTerrainAtlasWindow.get() && ImGui.begin("Terrain Atlas", m_ShowTerrainAtlasWindow)) {
+
+                float a = m_TerrainAtlas.getWidth() / (float) m_TerrainAtlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_TerrainAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
+
+            if (m_ShowPlayerAtlasWindow.get() && ImGui.begin("Player Atlas", m_ShowPlayerAtlasWindow)) {
+
+                float a = m_PlayerAtlas.getWidth() / (float) m_PlayerAtlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_PlayerAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
+
+            if (m_ShowDebugInfoWindow.get()) m_DebugInfoWindow.draw("Debug Info", m_ShowDebugInfoWindow);
+        });
     }
 
     /**
@@ -572,103 +693,7 @@ public class Graphics {
         glDisable(GL_BLEND);
 
         // Do ImGui
-        m_ImGuiHelper.loopOnce(() -> {
-
-            ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
-
-            ImGui.begin("Graphs");
-            ImGui.beginTabBar("Tabs");
-
-            for (int id = 0; id < m_GraphInfoList.size(); id++) {
-                final GraphInfo info = m_GraphInfoList.get(id);
-
-                if (ImGui.beginTabItem("Graph #" + id)) {
-                    if (ImPlot.beginPlot("Plot #" + id)) {
-                        final int res = info.resolution();
-                        final float invRes = 1.0f / (res - 1.0f);
-
-                        final Float[] xa = new Float[res];
-                        final Float[] ya = new Float[res];
-
-                        for (int i = 0; i < res; i++) {
-                            final float x = (info.xMax() - info.xMin()) * invRes * i + info.xMin();
-                            final float y = (info.yMax() - info.yMin()) * (info.graph() != null ? info.graph().at(x) : info.y() != null ? info.y()[i] : 0.0f) + info.yMin();
-                            xa[i] = x;
-                            ya[i] = y;
-                        }
-
-                        ImPlot.plotLine("Graph", xa, ya);
-                        ImPlot.endPlot();
-                    }
-                    ImGui.endTabItem();
-                }
-            }
-
-            ImGui.endTabBar();
-            ImGui.end();
-
-            ImGui.showDemoWindow();
-
-            {
-                ImGui.begin("Atlas");
-
-                float a = m_TerrainAtlas.getWidth() / (float) m_TerrainAtlas.getHeight();
-
-                float ww = ImGui.getContentRegionAvailX();
-                float wh = ImGui.getContentRegionAvailY();
-
-                int w = 0;
-                int h = 0;
-
-                if (ww < wh) {
-                    w = (int) ww;
-                    h = (int) (ww / a);
-                } else {
-                    w = (int) (wh * a);
-                    h = (int) wh;
-                }
-
-                ImGui.image(m_TerrainAtlas.getTexture().getHandle(), w, h);
-
-                ImGui.end();
-            }
-
-            {
-                ImGui.begin("Player Atlas");
-
-                float a = m_PlayerAtlas.getWidth() / (float) m_PlayerAtlas.getHeight();
-
-                float ww = ImGui.getContentRegionAvailX();
-                float wh = ImGui.getContentRegionAvailY();
-
-                int w = 0;
-                int h = 0;
-
-                if (ww < wh) {
-                    w = (int) ww;
-                    h = (int) (ww / a);
-                } else {
-                    w = (int) (wh * a);
-                    h = (int) wh;
-                }
-
-                ImGui.image(m_PlayerAtlas.getTexture().getHandle(), w, h);
-
-                ImGui.end();
-            }
-        });
-
-        if (Input.getKeyPress(Input.KeyCode.L)) {
-            m_Player.setLookingLeft(!m_Player.isLookingLeft());
-            updatePlayer();
-        }
-
-        if (Input.getKeyPress(Input.KeyCode.K)) {
-            int animation = m_Player.getCurrentAnimation().index();
-            animation++;
-            if (animation > 29) animation = 0;
-            m_Player.setCurrentAnimation(Player.animationFromIndex(animation));
-        }
+        updateGUI();
 
         // Check if window is still open
         return m_Window.loopOnce();
