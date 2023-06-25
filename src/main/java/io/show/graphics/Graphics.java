@@ -499,7 +499,7 @@ public class Graphics {
         float sy = 3.0f;
         float sx = sy * 120.0f / 80.0f;
         if (m_Player.isLookingLeft()) sx = -sx;
-        Matrix4f model = new Matrix4f().scale(sx, sy, 1.0f).translate(m_Player.getPosition().x() / sx - 0.5f, m_Player.getPosition().y() / sy - 0.5f, m_Player.getLayer() + 0.5f);
+        Matrix4f model = new Matrix4f().scale(sx, sy, 1.0f).translate(m_Player.getPosition().x() / sx - 0.5f, m_Player.getPosition().y() / sy - 0.5f, m_Player.getLayer() - 0.5f);
         m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         return this;
     }
