@@ -152,14 +152,14 @@ public class GameLoop {
                     move = true;
                 }
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
-                    world.m_Chunks.put(lastChunk - 4, new Chunk(lastChunk - 4, world, graphicArr));
+                    world.addChunk(lastChunk - 4);
                     offset--;
                     lastChunk = world.getChunkIndexAtPos((int) g.getPlayerPosition().x());
                     map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);
                     g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
                 }
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) > lastChunk) {
-                    world.m_Chunks.put(lastChunk + 4, new Chunk(lastChunk + 4, world, graphicArr));
+                    world.addChunk(lastChunk + 4);
                     offset++;
                     lastChunk = world.getChunkIndexAtPos((int) g.getPlayerPosition().x());
                     map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);

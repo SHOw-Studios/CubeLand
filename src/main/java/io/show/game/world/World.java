@@ -149,7 +149,7 @@ public class World {
             Chunk chunk = m_Chunks.get(c + startChunk);
 
             if (chunk == null) {
-                m_Chunks.put(c + startChunk, new Chunk(m_Height, c + startChunk, this, m_BlockTypes));
+                m_Chunks.put(c + startChunk, new Chunk(c + startChunk, this, m_BlockTypes));
                 chunk = m_Chunks.get(c + startChunk);
             }
 
@@ -161,6 +161,10 @@ public class World {
         }
 
         return world;
+    }
+
+    public void addChunk(int index) {
+        m_Chunks.put(index, new Chunk(index, this, m_BlockTypes));
     }
 
 }
