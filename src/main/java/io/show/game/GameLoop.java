@@ -4,10 +4,7 @@ import imgui.ImGui;
 import io.show.game.world.Chunk;
 import io.show.game.world.Constants;
 import io.show.game.world.World;
-import io.show.graphics.Bitmap;
-import io.show.graphics.BlockType;
-import io.show.graphics.Graphics;
-import io.show.graphics.Input;
+import io.show.graphics.*;
 import io.show.storage.Storage;
 import org.joml.Vector2f;
 
@@ -144,12 +141,24 @@ public class GameLoop {
                 if (Input.getKey(Input.KeyCode.A) || Input.getKey(Input.KeyCode.LEFT)) {
                     g.moveCamera(new Vector2f(-speed, 0));
                     g.movePlayer(new Vector2f(-speed, 0));
+                    g.getPlayer().setLookingLeft(true);
+                    if (g.getPlayer().getCurrentAnimation() != Player.animationFromIndex(20))
+                        g.getPlayer().setCurrentAnimation(Player.animationFromIndex(20));
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.D) || Input.getKey(Input.KeyCode.RIGHT)) {
                     g.moveCamera(new Vector2f(speed, 0));
                     g.movePlayer(new Vector2f(speed, 0));
+                    g.getPlayer().setLookingLeft(false);
+                    if (g.getPlayer().getCurrentAnimation() != Player.animationFromIndex(20))
+                        g.getPlayer().setCurrentAnimation(Player.animationFromIndex(20));
                     move = true;
+                }
+                //TODO Playerlayer 0 is invisible
+                if (Input.getKey(Input.KeyCode.LEFT_CONTROL)) {
+                    if (g.getPlayerLayer() == 0)
+                        g.setPlayerLayer(1);
+                    else g.setPlayerLayer(0);
                 }
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
                     world.addChunk(lastChunk - 4);
@@ -165,6 +174,7 @@ public class GameLoop {
                     map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);
                     g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
                 }
+                if (!move) g.getPlayer().setCurrentAnimation(Player.animationFromIndex(16));
                 if (move) g.updateCamera();
             }
 
