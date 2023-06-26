@@ -4,11 +4,17 @@ import imgui.ImGui;
 import io.show.game.world.Chunk;
 import io.show.game.world.World;
 import io.show.graphics.*;
+import io.show.storage.Storage;
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.geometry.*;
 import org.joml.Vector2f;
+import org.joml.Vector2fc;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+
 
 /**
  * @author Ilian O.
@@ -120,6 +126,17 @@ public class GameLoop {
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
         g.updatePlayer();
+        g.setPlayerLayer(1);
+        g.setPlayerPosition(new Vector2f(0, 500));
+        g.getDebugInfoWindow().logf("PlayerLayer: %d \n", g.getPlayerLayer());
+
+        //Physics?
+        org.dyn4j.world.World<Body> dynworld = new org.dyn4j.world.World<Body>();
+        Body player = new Body();
+        player.addFixture(Geometry.createRectangle(1.0, 2.0));
+        player.translate(new Vector2(g.getPlayerPosition().x(), g.getPlayerPosition().y()));
+        player.setMass(MassType.NORMAL);
+        dynworld.addBody(player);
 
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
@@ -127,17 +144,14 @@ public class GameLoop {
                 final float speed = Input.getDeltaTime() * 15.0f;
                 boolean move = false;
                 if (Input.getKey(Input.KeyCode.W) || Input.getKey(Input.KeyCode.UP)) {
-                    g.moveCamera(new Vector2f(0, speed));
                     g.movePlayer(new Vector2f(0, speed));
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.S) || Input.getKey(Input.KeyCode.DOWN)) {
-                    g.moveCamera(new Vector2f(0, -speed));
                     g.movePlayer(new Vector2f(0, -speed));
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.A) || Input.getKey(Input.KeyCode.LEFT)) {
-                    g.moveCamera(new Vector2f(-speed, 0));
                     g.movePlayer(new Vector2f(-speed, 0));
                     g.getPlayer().setLookingLeft(true);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
@@ -145,17 +159,20 @@ public class GameLoop {
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.D) || Input.getKey(Input.KeyCode.RIGHT)) {
-                    g.moveCamera(new Vector2f(speed, 0));
                     g.movePlayer(new Vector2f(speed, 0));
                     g.getPlayer().setLookingLeft(false);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
-                //TODO Playerlayer 0 is invisible
+                if (Input.getKey(Input.KeyCode.SPACE)) {
+                    dynworld.getBody(0).clearForce();
+                    dynworld.getBody(0).applyForce(new Vector2(0, 10));
+                }
                 if (Input.getKeyPress(Input.KeyCode.LEFT_CONTROL)) {
                     if (g.getPlayerLayer() == 0) g.setPlayerLayer(1);
                     else g.setPlayerLayer(0);
+                    g.getDebugInfoWindow().logf("PlayerLayer: %d\n", g.getPlayerLayer());
                 }
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
                     world.addChunk(lastChunk - 4);
@@ -173,9 +190,26 @@ public class GameLoop {
                 }
                 if (!move) if (g.getPlayer().getCurrentAnimation() != Player.ANIM_IDLE)
                     g.getPlayer().setCurrentAnimation(Player.ANIM_IDLE);
-                if (move) g.updateCamera();
+
             }
 
+            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
+            /*
+            for (int i = ((int) g.getPlayerPosition().y() - 10 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 10 + offset * Chunk.getWidth()); i++) {
+                for (int j = ((int) g.getPlayerPosition().x() - 10); i < ((int) g.getPlayerPosition().x() + 10); j++) {
+                    Body body = new Body();
+                    body.addFixture(Geometry.createRectangle(1, 1));
+                    body.translate(j, i);
+                    body.setMass(MassType.INFINITE);
+                    dynworld.addBody(body);
+                }
+            }*/
+            dynworld.update(1000);
+
+            g.setCameraPosition(g.getPlayerPosition());
+            g.updateCamera();
+
+            g.getDebugInfoWindow().logf("PlayerPos: %f, %f\n", g.getPlayerPosition().x(), g.getPlayerPosition().y());
         }
 
         // do not forget to destroy all resources after you are done using them
