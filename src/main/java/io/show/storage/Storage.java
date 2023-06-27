@@ -14,12 +14,30 @@ import java.util.Vector;
  */
 public class Storage {
     /**
+     * Makes Worldfile into Worldobject
+     *
+     * @param path
+     * @return World object;
+     * @throws IOException
+     */
+    public static World readWorld(String path) throws IOException {
+        JSONObject jsonobject = new JSONObject();
+        jsonobject = readJson(path);
+        String name = jsonobject.getString("name");
+        long seed = (jsonobject.getLong("seed"));
+        World world = new World(name, seed);
+        return world;
+    }
+
+    /**
      * Reads JSOnObjects form storage
      *
      * @param path
      * @return JSONObject
      * @throws IOException
      */
+
+
     public static JSONObject readJson(String path) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
