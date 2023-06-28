@@ -14,7 +14,7 @@ import java.util.Vector;
  */
 public class Storage {
     /**
-     * Makes Worldfile into Worldobject
+     * Changes  Worldfile into Worldobject
      *
      * @param path
      * @return World object;
