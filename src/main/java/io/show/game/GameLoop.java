@@ -31,20 +31,9 @@ import java.util.List;
 public class GameLoop {
     private static int block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air;
 
-    private static final Object BLOCK = new Object();
-
-//    private static int block(int x, int y, int z, float level, float scale) {
-//        float surface = level + SimplexNoise.noise(z * scale, y * scale, x * scale) * 10.0f;
-//        float d = surface - y;
-//        if (d <= 1 && d > 0) return block_grass_block;
-//        if (d <= 2 && d > 0) return block_dirt;
-//        if (y < surface) return block_stone;
-//        d = level - y;
-//        if (d <= 1 && d > 0) return block_water_surface;
-//        if (d > 0) return block_water;
-//        return block_air;
-//    }
-
+    /**
+     * relict of The physics experiment
+     */
     private boolean is(Body body, Object... types) {
         for (Object type : types) {
             if (body.getUserData() == type) {
@@ -54,20 +43,15 @@ public class GameLoop {
         return false;
     }
 
+    /**
+     * Initialises the Game.
+     * It adds the BlockTextures, generates a World, does dynamic Chunk loading, Player movements and when to do which animations
+     */
     public void init() {
         // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
         int offset = 0;
-        //TODO set Player pos to avg terrain height
-
-        // you can register graphs that get drawn by ImGui as an overlay
-        /*
-        g.registerGraph((x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
-        */
 
         final String[] textures = new String[]{ // just a temporary list of paths
 
@@ -103,6 +87,7 @@ public class GameLoop {
 
         };
 
+        //sets opacities anything but water is 1.0
         final float[] opacities = new float[]{1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 
         try {
@@ -133,15 +118,20 @@ public class GameLoop {
         g.generateTextureAtlas(16, 16);
 
         int[] graphicArr = {block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air};
+
         // World world = Storage.getWorld();
         World world = new World(World.MapSize.SMALL, graphicArr);
 
+        //makes world Array for Chunks 0 to 6
         int[][][] map = world.makeWorldArray(0, 6);
 
+        //initialises World in Graphics
         g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
 
+        //lastChunk is needed to know when Chunk is left
         int lastChunk = (int) (g.getPlayerPosition().x() / 16);
 
+        //Set Player and Camera to start Position
         g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), world.getHeight() / 2));
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
@@ -149,7 +139,7 @@ public class GameLoop {
         g.setPlayerLayer(1);
         g.getDebugInfoWindow().logf("PlayerLayer: %d \n", g.getPlayerLayer());
 
-        //Physics?
+        //Some tries to implement physics.
         /*
         org.dyn4j.world.World<Body> dynworld = new org.dyn4j.world.World<Body>();
         Body player = new Body();
@@ -213,12 +203,15 @@ public class GameLoop {
 
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
+            //was there for physics
 //            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
             /*
             for (int i = 1; i < dynworld.getBodyCount(); i++) {
                 dynworld.removeBody(i);
             }
 */
+
+            //To check for Keyboard inputs and set movement and animations accordingly
             if (!ImGui.getIO().getWantCaptureKeyboard()) {
                 final float speed = Input.getDeltaTime() * 15.0f;
                 boolean move = false;
@@ -244,6 +237,7 @@ public class GameLoop {
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
+                //some more relicts of the physics experiment
                 /*
                 if (Input.getKey(Input.KeyCode.SPACE)) {
                     dynworld.getBody(0).clearForce();
@@ -252,8 +246,10 @@ public class GameLoop {
                 if (Input.getKeyPress(Input.KeyCode.LEFT_CONTROL)) {
                     if (g.getPlayerLayer() == 0) g.setPlayerLayer(1);
                     else g.setPlayerLayer(0);
+                    //get Debug info about player layer. Was needed before, but now it's a good example of what it can do
                     g.getDebugInfoWindow().logf("PlayerLayer: %d\n", g.getPlayerLayer());
                 }
+                //Dynamic Chunk loading
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
                     world.addChunk(lastChunk - 4);
                     offset--;
@@ -273,6 +269,9 @@ public class GameLoop {
 
             }
 
+            /**
+             * Not working physics:
+             */
 //            for (int i = ((int) g.getPlayerPosition().y() - 5 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 5 + offset * Chunk.getWidth()); i++) {
 //                for (int j = ((int) g.getPlayerPosition().x() - 5); i < ((int) g.getPlayerPosition().x() + 5); j++) {
 //                    if (0 <= i && i < map[0].length && 0 <= j && j < map[0][0].length)

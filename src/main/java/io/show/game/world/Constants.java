@@ -1,5 +1,9 @@
 package io.show.game.world;
 
+/**
+ * @author Ilian O.
+ * Just some Constants
+ */
 public class Constants {
     public static final int MAP_MEDIUM_WIDTH = Chunk.getWidth();
     public static final int MAP_MEDIUM_HEIGHT = 2000;

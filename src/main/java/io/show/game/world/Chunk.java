@@ -1,5 +1,8 @@
 package io.show.game.world;
 
+/**
+ * @author Ilian O.
+ */
 public class Chunk {
 
     private static final int WIDTH = 16;
@@ -33,6 +36,13 @@ public class Chunk {
         return WIDTH;
     }
 
+    /**
+     * Initialise a new Chunk
+     *
+     * @param startPosition
+     * @param parentWorld
+     * @param graphicArray
+     */
     public Chunk(int startPosition, World parentWorld, int[] graphicArray) {
         m_Height = parentWorld.getHeight();
         m_StartPosition = startPosition;
