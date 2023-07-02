@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * @author Ilian O.
+ */
 public class World {
     private int m_Width;
 
@@ -14,6 +17,7 @@ public class World {
     public final long m_OreLikelinessSeed = m_Random.nextLong();
     public final long m_TreeHeightSeed = m_Random.nextLong();
     public final long m_TreeLikelinessSeed = m_Random.nextLong();
+    //noodle and Cheese Seed are there for cave creation in the future
     public final long m_NoodleSeed = m_Random.nextLong();
     public final long m_CheeseSeed = m_Random.nextLong();
     private final Map<Integer, Chunk> m_Chunks = new HashMap<>();
@@ -60,23 +64,7 @@ public class World {
         return m_Height;
     }
 
-//    public static void main(String[] args) {
-//        int[][][] arr1 = {{{1, 2}, {3, 4}, {5, 6}, {7, 8}}, {{9, 10}, {11, 12}}};
-//        int[][][] arr2 = {{{13, 14}, {15, 16}, {17, 18}, {19, 20}}, {{21, 212}, {22, 23}}};
-//        int[][][] arr3 = {{{24, 25}, {26, 27}}, {{28, 29}, {30, 31}}};
-//        int[][][] arr4 = {{{32, 33}, {34, 35}}, {{36, 37}, {38, 39}}};
-//        int[][][] arr5 = {{{40, 41}, {42, 43}}, {{44, 45}, {46, 47}}};
-//        int[][][] result = append_5_3DArrays(arr1, arr2, arr3, arr4, arr5);
-//
-//        // Print the appended array
-//        for (int[][] arr : result) {
-//            for (int[] row : arr) {
-//                System.out.println(Arrays.toString(row));
-//            }
-//            System.out.println();
-//        }
-//    }
-
+    //A relict of the past. Maybe a war crime, but it worked
     /*
     public static int[][][] append_5_3DArrays(int[][][] arr1, int[][][] arr2, int[][][] arr3, int[][][] arr4, int[][][] arr5) {
         int depth = arr1.length;
@@ -163,6 +151,11 @@ public class World {
         return world;
     }
 
+    /**
+     * add A chunk to the Hashmap
+     *
+     * @param index
+     */
     public void addChunk(int index) {
         m_Chunks.put(index, new Chunk(index, this, m_BlockTypes));
     }

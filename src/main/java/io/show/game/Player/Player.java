@@ -2,6 +2,9 @@ package io.show.game.Player;
 
 import io.show.game.world.Constants;
 
+/**
+ * Relict when I tried to do some Physics myself. Now there is a player in Graphics who represents the players position.
+ */
 public class Player {
     /*
     Player
