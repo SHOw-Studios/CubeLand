@@ -2,18 +2,27 @@ package io.show.game;
 
 import imgui.ImGui;
 import io.show.game.world.Chunk;
+import io.show.game.world.Constants;
 import io.show.game.world.World;
 import io.show.graphics.*;
 import io.show.storage.Storage;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.dynamics.TimeStep;
+import org.dyn4j.dynamics.contact.ContactConstraint;
 import org.dyn4j.geometry.*;
+import org.dyn4j.world.ContactCollisionData;
+import org.dyn4j.world.PhysicsWorld;
+import org.dyn4j.world.listener.ContactListener;
+import org.dyn4j.world.listener.ContactListenerAdapter;
+import org.dyn4j.world.listener.StepListener;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -21,6 +30,8 @@ import java.io.IOException;
  */
 public class GameLoop {
     private static int block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air;
+
+    private static final Object BLOCK = new Object();
 
 //    private static int block(int x, int y, int z, float level, float scale) {
 //        float surface = level + SimplexNoise.noise(z * scale, y * scale, x * scale) * 10.0f;
@@ -33,6 +44,15 @@ public class GameLoop {
 //        if (d > 0) return block_water;
 //        return block_air;
 //    }
+
+    private boolean is(Body body, Object... types) {
+        for (Object type : types) {
+            if (body.getUserData() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void init() {
         // get the graphics instance
@@ -122,15 +142,15 @@ public class GameLoop {
 
         int lastChunk = (int) (g.getPlayerPosition().x() / 16);
 
-        g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), 0f));
+        g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), world.getHeight() / 2));
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
         g.updatePlayer();
         g.setPlayerLayer(1);
-        g.setPlayerPosition(new Vector2f(0, 500));
         g.getDebugInfoWindow().logf("PlayerLayer: %d \n", g.getPlayerLayer());
 
         //Physics?
+        /*
         org.dyn4j.world.World<Body> dynworld = new org.dyn4j.world.World<Body>();
         Body player = new Body();
         player.addFixture(Geometry.createRectangle(1.0, 2.0));
@@ -138,8 +158,67 @@ public class GameLoop {
         player.setMass(MassType.NORMAL);
         dynworld.addBody(player);
 
+        for (int i = 0; i < map[g.getPlayerLayer()].length; i++) {
+            for (int j = 0; j < map[g.getPlayerLayer()][i].length; j++) {
+                if (map[g.getPlayerLayer()][i][j] != 2 && map[g.getPlayerLayer()][i][j] != 3 && map[g.getPlayerLayer()][i][j] != 15) {
+                    Body block = new Body();
+                    block.addFixture(Geometry.createRectangle(1.0, 1.0));
+                    block.translate(j, i); // translate to appropriate world coordinates
+                    block.setUserData(BLOCK);
+                    dynworld.addBody(block);
+                }
+            }
+        }
+        dynworld.addStepListener(new StepListener<Body>() {
+            @Override
+            public void begin(TimeStep step, PhysicsWorld<Body, ?> world) {
+                begin(step, world);
+                boolean isGround = false;
+                List<ContactConstraint<Body>> contacts = world.getContacts(player);
+                for (ContactConstraint<Body> cc : contacts) {
+                    if (is(cc.getOtherBody(player), BLOCK) && cc.isEnabled()) {
+                        isGround = true;
+                    }
+                }
+                if (!isGround) {
+                    isGround = false;
+                }
+            }
+
+            @Override
+            public void updatePerformed(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+            @Override
+            public void postSolve(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+            @Override
+            public void end(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+        });
+        dynworld.addContactListener(new ContactListenerAdapter<Body>() {
+            @Override
+            public void collision(ContactCollisionData<Body> collision) {
+                ContactConstraint<Body> cc = collision.getContactConstraint();
+                trackIsOnGround(cc);
+                super.collision(collision);
+            }
+        });
+*/
+
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
+//            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
+            /*
+            for (int i = 1; i < dynworld.getBodyCount(); i++) {
+                dynworld.removeBody(i);
+            }
+*/
             if (!ImGui.getIO().getWantCaptureKeyboard()) {
                 final float speed = Input.getDeltaTime() * 15.0f;
                 boolean move = false;
@@ -165,10 +244,11 @@ public class GameLoop {
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
+                /*
                 if (Input.getKey(Input.KeyCode.SPACE)) {
                     dynworld.getBody(0).clearForce();
                     dynworld.getBody(0).applyForce(new Vector2(0, 10));
-                }
+                }*/
                 if (Input.getKeyPress(Input.KeyCode.LEFT_CONTROL)) {
                     if (g.getPlayerLayer() == 0) g.setPlayerLayer(1);
                     else g.setPlayerLayer(0);
@@ -193,18 +273,19 @@ public class GameLoop {
 
             }
 
-            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
-            /*
-            for (int i = ((int) g.getPlayerPosition().y() - 10 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 10 + offset * Chunk.getWidth()); i++) {
-                for (int j = ((int) g.getPlayerPosition().x() - 10); i < ((int) g.getPlayerPosition().x() + 10); j++) {
-                    Body body = new Body();
-                    body.addFixture(Geometry.createRectangle(1, 1));
-                    body.translate(j, i);
-                    body.setMass(MassType.INFINITE);
-                    dynworld.addBody(body);
-                }
-            }*/
-            dynworld.update(1000);
+//            for (int i = ((int) g.getPlayerPosition().y() - 5 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 5 + offset * Chunk.getWidth()); i++) {
+//                for (int j = ((int) g.getPlayerPosition().x() - 5); i < ((int) g.getPlayerPosition().x() + 5); j++) {
+//                    if (0 <= i && i < map[0].length && 0 <= j && j < map[0][0].length)
+//                        if (map[g.getPlayerLayer()][i][j] != 15 && map[g.getPlayerLayer()][i][j] != 2) {
+//                            Body body = new Body();
+//                            body.addFixture(Geometry.createRectangle(1, 1));
+//                            body.translate(j, i);
+//                            body.setMass(MassType.INFINITE);
+//                            dynworld.addBody(body);
+//                        }
+//                }
+//            }
+//            dynworld.update(1000);
 
             g.setCameraPosition(g.getPlayerPosition());
             g.updateCamera();

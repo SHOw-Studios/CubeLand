@@ -51,8 +51,8 @@ public class Generator {
         for (int i = 0; i < DEPTH; i++) {
             for (int j = 0; j < HEIGHT; j++) {
                 for (int k = 0; k < WIDTH; k++) {
-                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, (xOff + k) * scale, i * scale) * 20.0f;
-                    float orenoise = OpenSimplex2.noise3_ImproveXY(m_OrelikelynessSeed, j * scale, (xOff + k) * scale, i * scale);
+                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, (xOff * 16 + k) * scale, i * scale) * 20.0f;
+                    float orenoise = OpenSimplex2.noise3_ImproveXY(m_OrelikelynessSeed, j * scale, (xOff * 16 + k) * scale, i * scale);
                     //-150 to get min 50 Ground and min 100 to build above
                     //+50 to get min 50 Ground
                     float d = noise - j;
