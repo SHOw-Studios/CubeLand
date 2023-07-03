@@ -21,11 +21,11 @@ public class World {
 
     public long heightSeed;
 
-    public long getOrelikelynessSeed() {
+    public long getOreLikelinessSeed() {
         return orelikelynessSeed;
     }
 
-    public void setOrelikelynessSeed(long orelikelynessSeed) {
+    public void setOreLikelinessSeed(long orelikelynessSeed) {
         this.orelikelynessSeed = orelikelynessSeed;
     }
 

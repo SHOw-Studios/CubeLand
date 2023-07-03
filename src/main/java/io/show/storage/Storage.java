@@ -126,7 +126,8 @@ public class Storage {
         writer.object().key("treeLikelinessSeed").value(world.getTreeLikelinessSeed()).endObject();
         writer.object().key("noodleSeed").value(world.getNoodleSeed()).endObject();
         writer.object().key("cheeseSeed").value(world.getCheeseSeed()).endObject();
-        
+        writer.object().key("oreLikelinessSeed").value(world.getOreLikelinessSeed()).endObject();
+
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());
