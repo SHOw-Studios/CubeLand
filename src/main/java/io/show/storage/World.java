@@ -10,11 +10,65 @@ public class World {
     private int HEIGHT;
 
     private Map<Integer, int[]> m_Chunks = new HashMap();
+
+    public long getHeightSeed() {
+        return heightSeed;
+    }
+
+    public void setHeightSeed(long heightSeed) {
+        this.heightSeed = heightSeed;
+    }
+
     public long heightSeed;
+
+    public long getOrelikelynessSeed() {
+        return orelikelynessSeed;
+    }
+
+    public void setOrelikelynessSeed(long orelikelynessSeed) {
+        this.orelikelynessSeed = orelikelynessSeed;
+    }
+
     public long orelikelynessSeed;
+
+    public long getTreeHeightSeed() {
+        return treeHeightSeed;
+    }
+
+    public void setTreeHeightSeed(long treeHeightSeed) {
+        this.treeHeightSeed = treeHeightSeed;
+    }
+
     public long treeHeightSeed;
+
+    public long getTreeLikelinessSeed() {
+        return treeLikelinessSeed;
+    }
+
+    public void setTreeLikelinessSeed(long treeLikelinessSeed) {
+        this.treeLikelinessSeed = treeLikelinessSeed;
+    }
+
     public long treeLikelinessSeed;
+
+    public long getNoodleSeed() {
+        return noodleSeed;
+    }
+
+    public void setNoodleSeed(long noodleSeed) {
+        this.noodleSeed = noodleSeed;
+    }
+
     public long noodleSeed;
+
+    public long getCheeseSeed() {
+        return cheeseSeed;
+    }
+
+    public void setCheeseSeed(long cheeseSeed) {
+        this.cheeseSeed = cheeseSeed;
+    }
+
     public long cheeseSeed;
 
     public World(String name, long heightSeed, long orelikelynessSeed, long treeHeightSeed, long treeLikelinessSeed, long noodleSeed, long cheeseSeed) {
