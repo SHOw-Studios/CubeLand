@@ -39,3 +39,7 @@ build/
 
 ### ImGui ###
 imgui.ini
+
+### SAVES ###
+saves/
+
