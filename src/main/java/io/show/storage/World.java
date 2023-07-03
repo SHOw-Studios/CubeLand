@@ -6,21 +6,33 @@ import java.util.Map;
 public class World {
 
     private String m_Name;
-    private long m_Seed;
-    private Map<Integer, int[]> m_Chunks = new HashMap();
+    private int WIDTH;
+    private int HEIGHT;
 
-    public World(String name, long seed) {
+    private Map<Integer, int[]> m_Chunks = new HashMap();
+    public long heightSeed;
+    public long orelikelynessSeed;
+    public long treeHeightSeed;
+    public long treeLikelinessSeed;
+    public long noodleSeed;
+    public long cheeseSeed;
+
+    public World(String name, long heightSeed, long orelikelynessSeed, long treeHeightSeed, long treeLikelinessSeed, long noodleSeed, long cheeseSeed) {
         m_Name = name;
-        m_Seed = seed;
+        this.heightSeed = heightSeed;
+        this.orelikelynessSeed = orelikelynessSeed;
+        this.treeHeightSeed = treeHeightSeed;
+        this.treeLikelinessSeed = treeLikelinessSeed;
+        this.noodleSeed = noodleSeed;
+        this.cheeseSeed = cheeseSeed;
+
+
     }
 
     public String getName() {
         return m_Name;
     }
 
-    public long getSeed() {
-        return m_Seed;
-    }
 
     public int getChunkCount() {
         return m_Chunks.size();
