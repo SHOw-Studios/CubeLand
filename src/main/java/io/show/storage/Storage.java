@@ -121,7 +121,12 @@ public class Storage {
         StringBuilder builder = new StringBuilder();
         JSONWriter writer = new JSONWriter(builder);
         writer.object().key("name").value(world.getName()).endObject();
-
+        writer.object().key("heightSeed").value(world.getHeightSeed()).endObject();
+        writer.object().key("treeHeightSeed").value(world.getTreeHeightSeed()).endObject();
+        writer.object().key("treeLikelinessSeed").value(world.getTreeLikelinessSeed()).endObject();
+        writer.object().key("noodleSeed").value(world.getNoodleSeed()).endObject();
+        writer.object().key("cheeseSeed").value(world.getCheeseSeed()).endObject();
+        
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());
