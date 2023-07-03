@@ -1,3 +1,4 @@
+target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -39,9 +40,6 @@ build/
 ### ImGui ###
 imgui.ini
 
-### RUST ###
-cargo.lock
-target/
-
 ### SAVES ###
 saves/
+
