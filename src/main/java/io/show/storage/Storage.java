@@ -24,8 +24,13 @@ public class Storage {
         JSONObject jsonobject = new JSONObject();
         jsonobject = readJson(path);
         String name = jsonobject.getString("name");
-        long seed = (jsonobject.getLong("seed"));
-        World world = new World(name, seed);
+        long heightSeed = jsonobject.getLong("heightSeed");
+        long orelikelynessSeed = jsonobject.getLong("orelikelynessSeed");
+        long treeHeightSeed = jsonobject.getLong("treeLikelinessSeed");
+        long treeLikelinessSeed = jsonobject.getLong("treeLikelinessSeed");
+        long noodleSeed = jsonobject.getLong("noodleSeed");
+        long cheeseSeed = jsonobject.getLong("cheeseSeed");
+        World world = new World(name, heightSeed, orelikelynessSeed, treeHeightSeed, treeLikelinessSeed, noodleSeed, cheeseSeed);
         return world;
     }
 
@@ -116,7 +121,7 @@ public class Storage {
         StringBuilder builder = new StringBuilder();
         JSONWriter writer = new JSONWriter(builder);
         writer.object().key("name").value(world.getName()).endObject();
-        writer.object().key("seed").value(world.getSeed()).endObject();
+
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());
