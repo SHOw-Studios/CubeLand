@@ -1,5 +1,6 @@
 package io.show.graphics.internal;
 
+import io.show.graphics.Graphics;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 
@@ -49,9 +50,11 @@ public class Debug {
             };
 
             System.out.printf("0x%s: %s of %s severity, raised from %s: %s\n", Integer.toHexString(id).toUpperCase(), _type, _severity, _source, GLDebugMessageCallback.getMessage(length, message));
+            Graphics.getInstance().getDebugInfoWindow().logf("0x%s: %s of %s severity, raised from %s: %s\n", Integer.toHexString(id).toUpperCase(), _type, _severity, _source, GLDebugMessageCallback.getMessage(length, message));
 
             if (type == GL43.GL_DEBUG_TYPE_ERROR || severity == GL43.GL_DEBUG_SEVERITY_HIGH) {
                 System.err.println("TJesus don't like it");
+                Graphics.getInstance().getDebugInfoWindow().logf("TJesus don't like it");
             }
 
         }, NULL);

@@ -35,10 +35,6 @@ public class Input {
         UNKNOWN
     }
 
-    private static class KeyState {
-        boolean prev, now;
-    }
-
     private static int getGLFWKeyCode(KeyCode keyCode) {
         return switch (keyCode) {
 
@@ -166,7 +162,7 @@ public class Input {
         };
     }
 
-    public static KeyCode getKeyCode(int keyCode) {
+    private static KeyCode getKeyCode(int keyCode) {
         return switch (keyCode) {
 
             case GLFW_KEY_SPACE -> KeyCode.SPACE;
@@ -293,7 +289,48 @@ public class Input {
         };
     }
 
+    public enum MouseButton {
+        LEFT, RIGHT, MIDDLE,
+
+        B4, B5, B6, B7, B8,
+
+        UNKNOWN
+    }
+
+    private static int getGLFWMouseButton(MouseButton mouseButton) {
+        return switch (mouseButton) {
+            case LEFT -> GLFW_MOUSE_BUTTON_1;
+            case RIGHT -> GLFW_MOUSE_BUTTON_2;
+            case MIDDLE -> GLFW_MOUSE_BUTTON_3;
+            case B4 -> GLFW_MOUSE_BUTTON_4;
+            case B5 -> GLFW_MOUSE_BUTTON_5;
+            case B6 -> GLFW_MOUSE_BUTTON_6;
+            case B7 -> GLFW_MOUSE_BUTTON_7;
+            case B8 -> GLFW_MOUSE_BUTTON_8;
+            case UNKNOWN -> GLFW_MOUSE_BUTTON_LAST;
+        };
+    }
+
+    private static MouseButton getMouseButton(int mouseButton) {
+        return switch (mouseButton) {
+            case GLFW_MOUSE_BUTTON_1 -> MouseButton.LEFT;
+            case GLFW_MOUSE_BUTTON_2 -> MouseButton.RIGHT;
+            case GLFW_MOUSE_BUTTON_3 -> MouseButton.MIDDLE;
+            case GLFW_MOUSE_BUTTON_4 -> MouseButton.B4;
+            case GLFW_MOUSE_BUTTON_5 -> MouseButton.B5;
+            case GLFW_MOUSE_BUTTON_6 -> MouseButton.B6;
+            case GLFW_MOUSE_BUTTON_7 -> MouseButton.B7;
+            case GLFW_MOUSE_BUTTON_8 -> MouseButton.B8;
+            default -> MouseButton.UNKNOWN;
+        };
+    }
+
+    private static class KeyState {
+        boolean prev, now;
+    }
+
     private static final Map<KeyCode, KeyState> __key_states = new HashMap<>();
+    private static final Map<MouseButton, KeyState> __mouse_states = new HashMap<>();
 
     private Input() {
     }
@@ -305,10 +342,25 @@ public class Input {
             __key_states.putIfAbsent(code, new KeyState());
         }
 
+        for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; i++) {
+            MouseButton button = getMouseButton(i);
+            if (button == MouseButton.UNKNOWN) continue;
+            __mouse_states.putIfAbsent(button, new KeyState());
+        }
+
         __key_states.forEach((code, state) -> {
             state.prev = state.now;
             state.now = Graphics.getInstance().getWindow().getKeyDown(getGLFWKeyCode(code));
         });
+
+        __mouse_states.forEach((button, state) -> {
+            state.prev = state.now;
+            state.now = Graphics.getInstance().getWindow().getMouseButtonDown(getGLFWMouseButton(button));
+        });
+    }
+
+    public static float getDeltaTime() {
+        return ImGui.getIO().getDeltaTime();
     }
 
     public static boolean getKey(KeyCode keyCode) {
@@ -327,11 +379,35 @@ public class Input {
         return __key_states.get(keyCode).prev && __key_states.get(keyCode).now;
     }
 
-    public static float getDeltaTime() {
-        return ImGui.getIO().getDeltaTime();
-    }
-
     public static boolean canUseKeyboard() {
         return !ImGui.getIO().getWantCaptureKeyboard();
+    }
+
+    public static boolean getMouseButton(MouseButton mouseButton) {
+        return __mouse_states.get(mouseButton).now;
+    }
+
+    public static boolean getMouseButtonPress(MouseButton mouseButton) {
+        return !__mouse_states.get(mouseButton).prev && __mouse_states.get(mouseButton).now;
+    }
+
+    public static boolean getMouseButtonRelease(MouseButton mouseButton) {
+        return __mouse_states.get(mouseButton).prev && !__mouse_states.get(mouseButton).now;
+    }
+
+    public static boolean getMouseButtonRepeat(MouseButton mouseButton) {
+        return __mouse_states.get(mouseButton).prev && __mouse_states.get(mouseButton).now;
+    }
+
+    public static boolean canUseMouse() {
+        return !ImGui.getIO().getWantCaptureMouse();
+    }
+
+    public static float getMouseX() {
+        return ImGui.getIO().getMousePosX();
+    }
+
+    public static float getMouseY() {
+        return ImGui.getIO().getMousePosY();
     }
 }

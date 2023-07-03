@@ -90,8 +90,6 @@ public class Window implements AutoCloseable {
             glViewport(0, 0, w, h);
             if (m_ResizeListener != null) m_ResizeListener.call();
         });
-        glfwSetWindowMaximizeCallback(m_Handle, (window, maximized) -> {
-        });
 
         try {
             Bitmap bitmap = new Bitmap(Storage.readImage(iconPath));
@@ -271,6 +269,10 @@ public class Window implements AutoCloseable {
 
     public boolean getKeyDown(int code) {
         return glfwGetKey(m_Handle, code) == GLFW_PRESS;
+    }
+
+    public boolean getMouseButtonDown(int button) {
+        return glfwGetMouseButton(m_Handle, button) == GLFW_PRESS;
     }
 
     @Override
