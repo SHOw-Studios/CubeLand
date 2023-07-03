@@ -57,7 +57,7 @@ public class World {
 
     public World(io.show.storage.World StoredWorld, int[] blockTypes) {
         m_HeightSeed = StoredWorld.getHeightSeed();
-        m_OreLikelinessSeed = StoredWorld.getOreLikelinessSeed;
+        m_OreLikelinessSeed = StoredWorld.getOreLikelinessSeed();
         m_TreeHeightSeed = StoredWorld.getTreeHeightSeed();
         m_TreeLikelinessSeed = StoredWorld.getTreeLikelinessSeed();
         m_NoodleSeed = StoredWorld.getNoodleSeed();
