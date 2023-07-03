@@ -14,12 +14,35 @@ import java.util.Vector;
  */
 public class Storage {
     /**
+     * Changes  Worldfile into Worldobject
+     *
+     * @param path
+     * @return World object;
+     * @throws IOException
+     */
+    public static World readWorld(String path) throws IOException {
+        JSONObject jsonobject = new JSONObject();
+        jsonobject = readJson(path);
+        String name = jsonobject.getString("name");
+        long heightSeed = jsonobject.getLong("heightSeed");
+        long orelikelynessSeed = jsonobject.getLong("orelikelynessSeed");
+        long treeHeightSeed = jsonobject.getLong("treeLikelinessSeed");
+        long treeLikelinessSeed = jsonobject.getLong("treeLikelinessSeed");
+        long noodleSeed = jsonobject.getLong("noodleSeed");
+        long cheeseSeed = jsonobject.getLong("cheeseSeed");
+        World world = new World(name, heightSeed, orelikelynessSeed, treeHeightSeed, treeLikelinessSeed, noodleSeed, cheeseSeed);
+        return world;
+    }
+
+    /**
      * Reads JSOnObjects form storage
      *
      * @param path
      * @return JSONObject
      * @throws IOException
      */
+
+
     public static JSONObject readJson(String path) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
@@ -98,7 +121,13 @@ public class Storage {
         StringBuilder builder = new StringBuilder();
         JSONWriter writer = new JSONWriter(builder);
         writer.object().key("name").value(world.getName()).endObject();
-        writer.object().key("seed").value(world.getSeed()).endObject();
+        writer.object().key("heightSeed").value(world.getHeightSeed()).endObject();
+        writer.object().key("treeHeightSeed").value(world.getTreeHeightSeed()).endObject();
+        writer.object().key("treeLikelinessSeed").value(world.getTreeLikelinessSeed()).endObject();
+        writer.object().key("noodleSeed").value(world.getNoodleSeed()).endObject();
+        writer.object().key("cheeseSeed").value(world.getCheeseSeed()).endObject();
+        writer.object().key("oreLikelinessSeed").value(world.getOreLikelinessSeed()).endObject();
+
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());

@@ -2,13 +2,28 @@ package io.show.game;
 
 import imgui.ImGui;
 import io.show.game.world.Chunk;
+import io.show.game.world.Constants;
 import io.show.game.world.World;
 import io.show.graphics.*;
+import io.show.storage.Storage;
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.dynamics.TimeStep;
+import org.dyn4j.dynamics.contact.ContactConstraint;
+import org.dyn4j.geometry.*;
+import org.dyn4j.world.ContactCollisionData;
+import org.dyn4j.world.PhysicsWorld;
+import org.dyn4j.world.listener.ContactListener;
+import org.dyn4j.world.listener.ContactListenerAdapter;
+import org.dyn4j.world.listener.StepListener;
 import org.joml.Vector2f;
+import org.joml.Vector2fc;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
 
 /**
  * @author Ilian O.
@@ -16,32 +31,27 @@ import java.io.IOException;
 public class GameLoop {
     private static int block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air;
 
-//    private static int block(int x, int y, int z, float level, float scale) {
-//        float surface = level + SimplexNoise.noise(z * scale, y * scale, x * scale) * 10.0f;
-//        float d = surface - y;
-//        if (d <= 1 && d > 0) return block_grass_block;
-//        if (d <= 2 && d > 0) return block_dirt;
-//        if (y < surface) return block_stone;
-//        d = level - y;
-//        if (d <= 1 && d > 0) return block_water_surface;
-//        if (d > 0) return block_water;
-//        return block_air;
-//    }
+    /**
+     * relict of The physics experiment
+     */
+    private boolean is(Body body, Object... types) {
+        for (Object type : types) {
+            if (body.getUserData() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    /**
+     * Initialises the Game.
+     * It adds the BlockTextures, generates a World, does dynamic Chunk loading, Player movements and when to do which animations
+     */
     public void init() {
         // get the graphics instance
         final Graphics g = Graphics.getInstance();
 
         int offset = 0;
-        //TODO set Player pos to avg terrain height
-
-        // you can register graphs that get drawn by ImGui as an overlay
-        /*
-        g.registerGraph((x) -> x * x, 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph((x) -> (float) -Math.sqrt(1.0f - x * x), 100, -1.0f, 1.0f, 0.0f, 1.0f);
-        g.registerGraph(new float[]{0.0f, 0.454f, 0.142f, 0.654f, 0.1534f, 0.13f, 0.92f, 0.155f, 1.0f}, 0.0f, 1.0f, 0.0f, 1.0f);
-        */
 
         final String[] textures = new String[]{ // just a temporary list of paths
 
@@ -77,6 +87,7 @@ public class GameLoop {
 
         };
 
+        //sets opacities anything but water is 1.0
         final float[] opacities = new float[]{1.0f, 1.0f, 0.7f, 0.7f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 
         try {
@@ -107,37 +118,112 @@ public class GameLoop {
         g.generateTextureAtlas(16, 16);
 
         int[] graphicArr = {block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air};
+
         // World world = Storage.getWorld();
         World world = new World(World.MapSize.SMALL, graphicArr);
 
+        //makes world Array for Chunks 0 to 6
         int[][][] map = world.makeWorldArray(0, 6);
 
+        //initialises World in Graphics
         g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
 
+        //lastChunk is needed to know when Chunk is left
         int lastChunk = (int) (g.getPlayerPosition().x() / 16);
 
-        g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), 0f));
+        //Set Player and Camera to start Position
+        g.setPlayerPosition(new Vector2f(3.5f * Chunk.getWidth(), world.getHeight() / 2));
         g.setCameraPosition(g.getPlayerPosition());
         g.updateCamera();
         g.updatePlayer();
+        g.setPlayerLayer(1);
+        g.getDebugInfoWindow().logf("PlayerLayer: %d \n", g.getPlayerLayer());
+
+        //Some tries to implement physics.
+        /*
+        org.dyn4j.world.World<Body> dynworld = new org.dyn4j.world.World<Body>();
+        Body player = new Body();
+        player.addFixture(Geometry.createRectangle(1.0, 2.0));
+        player.translate(new Vector2(g.getPlayerPosition().x(), g.getPlayerPosition().y()));
+        player.setMass(MassType.NORMAL);
+        dynworld.addBody(player);
+
+        for (int i = 0; i < map[g.getPlayerLayer()].length; i++) {
+            for (int j = 0; j < map[g.getPlayerLayer()][i].length; j++) {
+                if (map[g.getPlayerLayer()][i][j] != 2 && map[g.getPlayerLayer()][i][j] != 3 && map[g.getPlayerLayer()][i][j] != 15) {
+                    Body block = new Body();
+                    block.addFixture(Geometry.createRectangle(1.0, 1.0));
+                    block.translate(j, i); // translate to appropriate world coordinates
+                    block.setUserData(BLOCK);
+                    dynworld.addBody(block);
+                }
+            }
+        }
+        dynworld.addStepListener(new StepListener<Body>() {
+            @Override
+            public void begin(TimeStep step, PhysicsWorld<Body, ?> world) {
+                begin(step, world);
+                boolean isGround = false;
+                List<ContactConstraint<Body>> contacts = world.getContacts(player);
+                for (ContactConstraint<Body> cc : contacts) {
+                    if (is(cc.getOtherBody(player), BLOCK) && cc.isEnabled()) {
+                        isGround = true;
+                    }
+                }
+                if (!isGround) {
+                    isGround = false;
+                }
+            }
+
+            @Override
+            public void updatePerformed(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+            @Override
+            public void postSolve(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+            @Override
+            public void end(TimeStep step, PhysicsWorld<Body, ?> world) {
+
+            }
+
+        });
+        dynworld.addContactListener(new ContactListenerAdapter<Body>() {
+            @Override
+            public void collision(ContactCollisionData<Body> collision) {
+                ContactConstraint<Body> cc = collision.getContactConstraint();
+                trackIsOnGround(cc);
+                super.collision(collision);
+            }
+        });
+*/
 
         // this is the main loop, it stops when the graphics' window closes
         while (g.loopOnce()) {
+            //was there for physics
+//            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
+            /*
+            for (int i = 1; i < dynworld.getBodyCount(); i++) {
+                dynworld.removeBody(i);
+            }
+*/
+
+            //To check for Keyboard inputs and set movement and animations accordingly
             if (!ImGui.getIO().getWantCaptureKeyboard()) {
                 final float speed = Input.getDeltaTime() * 15.0f;
                 boolean move = false;
                 if (Input.getKey(Input.KeyCode.W) || Input.getKey(Input.KeyCode.UP)) {
-                    g.moveCamera(new Vector2f(0, speed));
                     g.movePlayer(new Vector2f(0, speed));
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.S) || Input.getKey(Input.KeyCode.DOWN)) {
-                    g.moveCamera(new Vector2f(0, -speed));
                     g.movePlayer(new Vector2f(0, -speed));
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.A) || Input.getKey(Input.KeyCode.LEFT)) {
-                    g.moveCamera(new Vector2f(-speed, 0));
                     g.movePlayer(new Vector2f(-speed, 0));
                     g.getPlayer().setLookingLeft(true);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
@@ -145,18 +231,25 @@ public class GameLoop {
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.D) || Input.getKey(Input.KeyCode.RIGHT)) {
-                    g.moveCamera(new Vector2f(speed, 0));
                     g.movePlayer(new Vector2f(speed, 0));
                     g.getPlayer().setLookingLeft(false);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
-                //TODO Playerlayer 0 is invisible
+                //some more relicts of the physics experiment
+                /*
+                if (Input.getKey(Input.KeyCode.SPACE)) {
+                    dynworld.getBody(0).clearForce();
+                    dynworld.getBody(0).applyForce(new Vector2(0, 10));
+                }*/
                 if (Input.getKeyPress(Input.KeyCode.LEFT_CONTROL)) {
                     if (g.getPlayerLayer() == 0) g.setPlayerLayer(1);
                     else g.setPlayerLayer(0);
+                    //get Debug info about player layer. Was needed before, but now it's a good example of what it can do
+                    g.getDebugInfoWindow().logf("PlayerLayer: %d\n", g.getPlayerLayer());
                 }
+                //Dynamic Chunk loading
                 if ((int) (g.getPlayerPosition().x() / Chunk.getWidth()) < lastChunk) {
                     world.addChunk(lastChunk - 4);
                     offset--;
@@ -173,9 +266,30 @@ public class GameLoop {
                 }
                 if (!move) if (g.getPlayer().getCurrentAnimation() != Player.ANIM_IDLE)
                     g.getPlayer().setCurrentAnimation(Player.ANIM_IDLE);
-                if (move) g.updateCamera();
+
             }
 
+            /**
+             * Not working physics:
+             */
+//            for (int i = ((int) g.getPlayerPosition().y() - 5 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 5 + offset * Chunk.getWidth()); i++) {
+//                for (int j = ((int) g.getPlayerPosition().x() - 5); i < ((int) g.getPlayerPosition().x() + 5); j++) {
+//                    if (0 <= i && i < map[0].length && 0 <= j && j < map[0][0].length)
+//                        if (map[g.getPlayerLayer()][i][j] != 15 && map[g.getPlayerLayer()][i][j] != 2) {
+//                            Body body = new Body();
+//                            body.addFixture(Geometry.createRectangle(1, 1));
+//                            body.translate(j, i);
+//                            body.setMass(MassType.INFINITE);
+//                            dynworld.addBody(body);
+//                        }
+//                }
+//            }
+//            dynworld.update(1000);
+
+            g.setCameraPosition(g.getPlayerPosition());
+            g.updateCamera();
+
+            g.getDebugInfoWindow().logf("PlayerPos: %f, %f\n", g.getPlayerPosition().x(), g.getPlayerPosition().y());
         }
 
         // do not forget to destroy all resources after you are done using them
