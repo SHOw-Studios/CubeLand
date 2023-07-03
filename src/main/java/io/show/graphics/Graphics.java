@@ -530,7 +530,7 @@ public class Graphics {
 
     private void updateAnimation() {
         m_Tick += ImGui.getIO().getDeltaTime();
-        if (m_Tick > 0.1f) {
+        if (m_Tick > 0.05f) {
             m_Tick = 0;
             m_Player.nextFrame();
         }
