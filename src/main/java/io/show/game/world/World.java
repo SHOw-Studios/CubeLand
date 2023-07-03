@@ -13,19 +13,26 @@ public class World {
 
     private int m_Height;
     private final Random m_Random = new Random();
-    public final long m_HeightSeed = m_Random.nextLong();
-    public final long m_OreLikelinessSeed = m_Random.nextLong();
-    public final long m_TreeHeightSeed = m_Random.nextLong();
-    public final long m_TreeLikelinessSeed = m_Random.nextLong();
+    public final long m_HeightSeed;
+    public final long m_OreLikelinessSeed;
+    public final long m_TreeHeightSeed;
+    public final long m_TreeLikelinessSeed;
     //noodle and Cheese Seed are there for cave creation in the future
-    public final long m_NoodleSeed = m_Random.nextLong();
-    public final long m_CheeseSeed = m_Random.nextLong();
+    public final long m_NoodleSeed;
+    public final long m_CheeseSeed;
     private final Map<Integer, Chunk> m_Chunks = new HashMap<>();
     private final int[] m_BlockTypes;
 
     public enum MapSize {LARGE, MEDIUM, SMALL}
 
     public World(MapSize mapsize, int[] blockTypes) {
+        m_HeightSeed = m_Random.nextLong();
+        m_OreLikelinessSeed = m_Random.nextLong();
+        m_TreeHeightSeed = m_Random.nextLong();
+        m_TreeLikelinessSeed = m_Random.nextLong();
+        m_NoodleSeed = m_Random.nextLong();
+        m_CheeseSeed = m_Random.nextLong();
+
         switch (mapsize) {
             case MEDIUM -> {
                 m_Width = Constants.MAP_MEDIUM_WIDTH;
@@ -46,6 +53,16 @@ public class World {
         for (int i = 0; i < m_Width; i += Chunk.getWidth())
             m_Chunks.put(i / Chunk.getWidth(), new Chunk(i, this, blockTypes));
 
+    }
+
+    public World(io.show.storage.World StoredWorld, int[] blockTypes) {
+        m_HeightSeed = StoredWorld.getHeightSeed();
+        m_OreLikelinessSeed = StoredWorld.getOreLikelinessSeed;
+        m_TreeHeightSeed = StoredWorld.getTreeHeightSeed();
+        m_TreeLikelinessSeed = StoredWorld.getTreeLikelinessSeed();
+        m_NoodleSeed = StoredWorld.getNoodleSeed();
+        m_CheeseSeed = StoredWorld.getCheeseSeed();
+        m_BlockTypes = blockTypes;
     }
 
     public Chunk getChunkAtPos(int pos) {
