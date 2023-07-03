@@ -13,6 +13,9 @@ import java.util.Vector;
  * @author Samuel Hierl
  */
 public class Storage {
+
+    private static final String SAVES_PATH = "saves";
+
     /**
      * Changes  Worldfile into Worldobject
      *
@@ -21,17 +24,15 @@ public class Storage {
      * @throws IOException
      */
     public static World readWorld(String path) throws IOException {
-        JSONObject jsonobject = new JSONObject();
-        jsonobject = readJson(path);
+        JSONObject jsonobject = readJson(new File(SAVES_PATH, path + "\\world.json").getAbsolutePath());
         String name = jsonobject.getString("name");
         long heightSeed = jsonobject.getLong("heightSeed");
-        long orelikelynessSeed = jsonobject.getLong("orelikelynessSeed");
+        long orelikelynessSeed = jsonobject.getLong("oreLikelinessSeed");
         long treeHeightSeed = jsonobject.getLong("treeLikelinessSeed");
         long treeLikelinessSeed = jsonobject.getLong("treeLikelinessSeed");
         long noodleSeed = jsonobject.getLong("noodleSeed");
         long cheeseSeed = jsonobject.getLong("cheeseSeed");
-        World world = new World(name, heightSeed, orelikelynessSeed, treeHeightSeed, treeLikelinessSeed, noodleSeed, cheeseSeed);
-        return world;
+        return new World(name, heightSeed, orelikelynessSeed, treeHeightSeed, treeLikelinessSeed, noodleSeed, cheeseSeed);
     }
 
     /**
@@ -102,9 +103,6 @@ public class Storage {
         return list;
     }
 
-    private static final String SAVES_PATH = "saves";
-
-
     /**
      * Saves World into storage;
      *
@@ -120,14 +118,26 @@ public class Storage {
         File worldFile = new File(dir, "world.json");
         StringBuilder builder = new StringBuilder();
         JSONWriter writer = new JSONWriter(builder);
-        writer.object().key("name").value(world.getName()).endObject();
-        writer.object().key("heightSeed").value(world.getHeightSeed()).endObject();
-        writer.object().key("treeHeightSeed").value(world.getTreeHeightSeed()).endObject();
-        writer.object().key("treeLikelinessSeed").value(world.getTreeLikelinessSeed()).endObject();
-        writer.object().key("noodleSeed").value(world.getNoodleSeed()).endObject();
-        writer.object().key("cheeseSeed").value(world.getCheeseSeed()).endObject();
-        writer.object().key("oreLikelinessSeed").value(world.getOreLikelinessSeed()).endObject();
 
+        writer
+
+                .object()
+
+                .key("name").value(world.getName())
+
+                .key("heightSeed").value(world.getHeightSeed())
+
+                .key("treeHeightSeed").value(world.getTreeHeightSeed())
+
+                .key("treeLikelinessSeed").value(world.getTreeLikelinessSeed())
+
+                .key("noodleSeed").value(world.getNoodleSeed())
+
+                .key("cheeseSeed").value(world.getCheeseSeed())
+
+                .key("oreLikelinessSeed").value(world.getOreLikelinessSeed())
+
+                .endObject();
 
         FileWriter fileWriter = new FileWriter(worldFile);
         fileWriter.write(builder.toString());

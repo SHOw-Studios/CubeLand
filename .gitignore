@@ -42,3 +42,6 @@ imgui.ini
 ### RUST ###
 cargo.lock
 target/
+
+### SAVES ###
+saves/
