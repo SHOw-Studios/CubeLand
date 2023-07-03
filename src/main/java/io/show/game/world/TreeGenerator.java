@@ -11,8 +11,8 @@ import vendor.opensimplex2.OpenSimplex2;
 
 public class TreeGenerator {
     public TreeGenerator(World world) {
-        m_HeightSeed = world.m_TreeHeightSeed;
-        m_LikelinessSeed = world.m_TreeLikelinessSeed;
+        m_HeightSeed = world.getTreeHeightSeed();
+        m_LikelinessSeed = world.getTreeLikelinessSeed();
     }
 
     private long m_HeightSeed;

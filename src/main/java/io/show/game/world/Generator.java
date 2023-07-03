@@ -25,11 +25,10 @@ public class Generator {
         m_WIDTH = inputChunk.getWidth();
         m_DEPTH = inputChunk.getDepth();
         m_xOff = inputChunk.getStartPosition();
-        m_HeightSeed = inputWorld.m_HeightSeed;
+        m_HeightSeed = inputWorld.getHeightSeed();
         m_StartPos = inputChunk.getStartPosition();
         m_graphicArray = graphicArray;
-        m_OrelikelynessSeed = inputWorld.m_OreLikelinessSeed;
-        ;
+        m_OrelikelynessSeed = inputWorld.getOreLikelinessSeed();
     }
 
     /**

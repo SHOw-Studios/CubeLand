@@ -11,13 +11,38 @@ public class World {
     private int m_Width;
     private int m_Height;
     private final Random m_Random = new Random();
-    public final long m_HeightSeed;
-    public final long m_OreLikelinessSeed;
-    public final long m_TreeHeightSeed;
-    public final long m_TreeLikelinessSeed;
+    private final long m_HeightSeed;
+    private final long m_OreLikelinessSeed;
+    private final long m_TreeHeightSeed;
+    private final long m_TreeLikelinessSeed;
+    private final long m_CheeseSeed;
     //noodle and Cheese Seed are there for cave creation in the future
-    public final long m_NoodleSeed;
-    public final long m_CheeseSeed;
+    private final long m_NoodleSeed;
+
+    public long getHeightSeed() {
+        return m_HeightSeed;
+    }
+
+    public long getOreLikelinessSeed() {
+        return m_OreLikelinessSeed;
+    }
+
+    public long getTreeHeightSeed() {
+        return m_TreeHeightSeed;
+    }
+
+    public long getTreeLikelinessSeed() {
+        return m_TreeLikelinessSeed;
+    }
+
+    public long getNoodleSeed() {
+        return m_NoodleSeed;
+    }
+
+    public long getCheeseSeed() {
+        return m_CheeseSeed;
+    }
+
     private final Map<Integer, Chunk> m_Chunks = new HashMap<>();
     private final int[] m_BlockTypes;
 
