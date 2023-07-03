@@ -119,8 +119,14 @@ public class GameLoop {
 
         int[] graphicArr = {block_lava, block_lava_surface, block_water, block_water_surface, block_dirt, block_grass_block, block_grass_wall, block_leaves, block_liane_wall, block_wood, block_wood_panel, block_coal_ore, block_diamond_ore, block_lapis_ore, block_stone, block_air};
 
-        // World world = Storage.getWorld();
         World world = new World(World.MapSize.SMALL, graphicArr);
+        //Tries reading world. If not possible just creates a new one
+        try {
+            io.show.storage.World storageWorld = io.show.storage.Storage.readWorld("savedworld");
+            world = new World(storageWorld, graphicArr);
+        } catch (IOException err) {
+            System.out.println(err);
+        }
 
         //makes world Array for Chunks 0 to 6
         int[][][] map = world.makeWorldArray(0, 6);
@@ -291,7 +297,12 @@ public class GameLoop {
 
             g.getDebugInfoWindow().logf("PlayerPos: %f, %f\n", g.getPlayerPosition().x(), g.getPlayerPosition().y());
         }
-
+        //Tries saving the world If not possible it prints an error.
+        try {
+            io.show.storage.Storage.writeWorld(new io.show.storage.World(world, "savedworld"));
+        } catch (IOException err) {
+            System.err.println(err);
+        }
         // do not forget to destroy all resources after you are done using them
         g.destroy();
     }

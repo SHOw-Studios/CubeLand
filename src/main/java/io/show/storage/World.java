@@ -79,8 +79,16 @@ public class World {
         this.treeLikelinessSeed = treeLikelinessSeed;
         this.noodleSeed = noodleSeed;
         this.cheeseSeed = cheeseSeed;
+    }
 
-
+    public World(io.show.game.world.World gameWorld, String name) {
+        m_Name = name;
+        this.heightSeed = gameWorld.m_HeightSeed;
+        this.orelikelynessSeed = gameWorld.m_OreLikelinessSeed;
+        this.treeHeightSeed = gameWorld.m_TreeHeightSeed;
+        this.treeLikelinessSeed = gameWorld.m_TreeLikelinessSeed;
+        this.noodleSeed = gameWorld.m_NoodleSeed;
+        this.cheeseSeed = gameWorld.m_CheeseSeed;
     }
 
     public String getName() {
