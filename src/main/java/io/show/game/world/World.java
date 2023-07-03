@@ -9,8 +9,6 @@ import java.util.Random;
  */
 public class World {
     private int m_Width;
-
-
     private int m_Height;
     private final Random m_Random = new Random();
     public final long m_HeightSeed;
