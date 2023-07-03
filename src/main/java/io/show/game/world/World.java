@@ -79,6 +79,7 @@ public class World {
     }
 
     public World(io.show.storage.World StoredWorld, int[] blockTypes) {
+        m_Height = Constants.MAP_SMALL_HEIGHT;
         m_HeightSeed = StoredWorld.getHeightSeed();
         m_OreLikelinessSeed = StoredWorld.getOreLikelinessSeed();
         m_TreeHeightSeed = StoredWorld.getTreeHeightSeed();
@@ -86,6 +87,8 @@ public class World {
         m_NoodleSeed = StoredWorld.getNoodleSeed();
         m_CheeseSeed = StoredWorld.getCheeseSeed();
         m_BlockTypes = blockTypes;
+        for (int i = 0; i < m_Width; i += Chunk.getWidth())
+            m_Chunks.put(i / Chunk.getWidth(), new Chunk(i, this, blockTypes));
     }
 
     public Chunk getChunkAtPos(int pos) {
@@ -197,7 +200,7 @@ public class World {
      * @param index
      */
     public void addChunk(int index) {
-        m_Chunks.put(index, new Chunk(index, this, m_BlockTypes));
+        m_Chunks.putIfAbsent(index, new Chunk(index, this, m_BlockTypes));
     }
 
 }
