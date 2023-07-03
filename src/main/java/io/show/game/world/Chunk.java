@@ -1,41 +1,50 @@
 package io.show.game.world;
 
+/**
+ * @author Ilian O.
+ */
 public class Chunk {
 
     private static final int WIDTH = 16;
-    private int HEIGHT;
+    private final int m_Height;
     private static final int DEPTH = 2;
-    private static final int LAYERS = 2;
     private int m_StartPosition;
     private World m_ParentWorld;
     private int[][][] m_Blocks;
 
-    public int getHEIGHT() {
-        return HEIGHT;
+    public int getHeight() {
+        return m_Height;
     }
 
-    public int getDEPTH() {
+    public static int getDepth() {
         return DEPTH;
     }
 
-    public int getM_StartPosition() {
+    public int getStartPosition() {
         return m_StartPosition;
     }
 
-    public World getM_ParentWorld() {
+    public World getParentWorld() {
         return m_ParentWorld;
     }
 
-    public int[][][] getM_Blocks() {
+    public int[][][] getBlocks() {
         return m_Blocks;
     }
 
-    public static int getWIDTH() {
+    public static int getWidth() {
         return WIDTH;
     }
 
-    public Chunk(int height, int startPosition, World parentWorld, int[] graphicArray) {
-        HEIGHT = height;
+    /**
+     * Initialise a new Chunk
+     *
+     * @param startPosition
+     * @param parentWorld
+     * @param graphicArray
+     */
+    public Chunk(int startPosition, World parentWorld, int[] graphicArray) {
+        m_Height = parentWorld.getHeight();
         m_StartPosition = startPosition;
         m_ParentWorld = parentWorld;
         Generator generator = new Generator(parentWorld, this, graphicArray);

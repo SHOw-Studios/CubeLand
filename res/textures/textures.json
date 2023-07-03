@@ -63,5 +63,101 @@
     "unknown_light": {
       "path": "res/textures/misc/unknown_light.bmp"
     }
+  },
+  "player": {
+    "frame_width": 120,
+    "frame_height": 80,
+    "animations": {
+      "attack": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Attack.png"
+      },
+      "attack_2": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Attack2.png"
+      },
+      "attack_2_no_movement": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Attack2NoMovement.png"
+      },
+      "attack_combo_2_hit": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_AttackCombo2hit.png"
+      },
+      "attack_combo_no_movement": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_AttackComboNoMovement.png"
+      },
+      "attack_no_movement": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_AttackNoMovement.png"
+      },
+      "crouch": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Crouch.png"
+      },
+      "crouch_attack": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_CrouchAttack.png"
+      },
+      "crouch_full": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_CrouchFull.png"
+      },
+      "crouch_transition": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_CrouchTransition.png"
+      },
+      "crouch_walk": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_CrouchWalk.png"
+      },
+      "dash": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Dash.png"
+      },
+      "death": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Death.png"
+      },
+      "death_no_movement": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_DeathNoMovement.png"
+      },
+      "fall": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Fall.png"
+      },
+      "hit": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Hit.png"
+      },
+      "idle": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Idle.png"
+      },
+      "jump": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Jump.png"
+      },
+      "jump_fall_in_between": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_JumpFallInbetween.png"
+      },
+      "roll": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Roll.png"
+      },
+      "run": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Run.png"
+      },
+      "slide": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_Slide.png"
+      },
+      "slide_full": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_SlideFull.png"
+      },
+      "slide_transition_end": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_SlideTransitionEnd.png"
+      },
+      "slide_transition_start": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_SlideTransitionStart.png"
+      },
+      "turn_around": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_TurnAround.png"
+      },
+      "wall_climb": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_WallClimb.png"
+      },
+      "wall_climb_no_movement": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_WallClimbNoMovement.png"
+      },
+      "wall_hang": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_WallHang.png"
+      },
+      "wall_slide": {
+        "path": "res/textures/player/Colour1/outline/120x80_PNGSheets/_WallSlide.png"
+      }
+    }
   }
 }

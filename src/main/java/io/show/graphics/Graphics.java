@@ -3,6 +3,7 @@ package io.show.graphics;
 import imgui.ImGui;
 import imgui.extension.implot.ImPlot;
 import imgui.flag.ImGuiDockNodeFlags;
+import imgui.type.ImBoolean;
 import io.show.graphics.internal.ImGuiHelper;
 import io.show.graphics.internal.Window;
 import io.show.graphics.internal.gl.Shader;
@@ -108,7 +109,8 @@ public class Graphics {
     private final Window m_Window;
 
     private final List<Bitmap> m_BitmapMap = new Vector<>();
-    private TextureAtlas m_TextureAtlas;
+    private TextureAtlas m_TerrainAtlas;
+    private TextureAtlas m_PlayerAtlas;
 
     private final Model m_TerrainModel;
     private final Model m_SkyboxModel;
@@ -117,11 +119,21 @@ public class Graphics {
     private final List<GraphInfo> m_GraphInfoList = new Vector<>();
     private final ImGuiHelper m_ImGuiHelper;
 
+    private boolean m_Moved = false;
+
     private final Vector2f m_CameraPosition = new Vector2f(0.0f, 0.0f);
     private final List<BlockType> m_BlockTypeList = new Vector<>();
 
-    private final Vector2f m_PlayerPosition = new Vector2f(0.0f, 0.0f);
-    private int m_PlayerLayer = 0;
+    private final Player m_Player = new Player();
+
+    private final ImBoolean m_ShowSettingsWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowDemoWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowGraphWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowPlayerAtlasWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowTerrainAtlasWindow = new ImBoolean(false);
+    private final ImBoolean m_ShowDebugInfoWindow = new ImBoolean(false);
+
+    private final LogWindow m_DebugInfoWindow = new LogWindow();
 
     /**
      * Initializes GLFW, creates a window and sets up some other things like ImGui, the main materials and preps some drawing data
@@ -130,6 +142,7 @@ public class Graphics {
 
         // Print out the currently used LWJGL version
         System.out.println("Hello from LWJGL version " + Version.getVersion());
+        m_DebugInfoWindow.logf("Hello from LWJGL version %s%n", Version.getVersion());
 
         // Set up an error callback. The default implementation
         // will print the error message in System.err.
@@ -139,6 +152,7 @@ public class Graphics {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
         System.out.println("Hello from GLFW version " + glfwGetVersionString());
+        m_DebugInfoWindow.logf("Hello from GLFW version %s%n", glfwGetVersionString());
 
         // Window //
 
@@ -147,23 +161,28 @@ public class Graphics {
 
         // Models //
 
-        Shader opaqueShader;
+        Shader terrainShader;
         Shader skyboxShader;
+        Shader playerShader;
 
         try {
-            opaqueShader = new Shader("res/shaders/block/opaque.shader");
+            terrainShader = new Shader("res/shaders/block/opaque.shader");
             skyboxShader = new Shader("res/shaders/misc/skybox.shader");
+            playerShader = new Shader("res/shaders/player.shader");
         } catch (Shader.CompileStatusException | Shader.LinkStatusException | Shader.ValidateStatusException |
                  IOException e) {
             throw new RuntimeException(e);
         }
 
-        m_TerrainModel = new Model(new Mesh(), new Material(opaqueShader));
-        m_PlayerModel = new Model(new QuadMesh(), new Material(opaqueShader));
+        m_TerrainModel = new Model(new Mesh(), new Material(terrainShader));
+        m_PlayerModel = new Model(new Mesh(), new Material(playerShader));
         m_SkyboxModel = new Model(new QuadMesh(), new Material(skyboxShader));
 
         Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
-        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        terrainShader.bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        playerShader.bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+
+        m_PlayerModel.getMesh().setVertices(new float[]{0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1}).setIndices(new int[]{0, 1, 2, 2, 3, 0}).setVertexLayout(new VertexArray.Layout().pushFloat(3).pushFloat(2));
 
         onWindowResize(); // Set up the orthographic matrix for the first time
 
@@ -176,6 +195,75 @@ public class Graphics {
         m_ImGuiHelper.addFont("res/fonts/Oasis-BW0JV.ttf", 16.0f);
         m_ImGuiHelper.addFont("res/fonts/CursedTimerUlil-Aznm.ttf", 14.0f);
         m_ImGuiHelper.updateFonts();
+
+        // Player animations //
+        try {
+            registerPlayerAnimations();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void registerPlayerAnimations() throws IOException {
+        JSONObject player = Storage.readJson("res/textures/textures.json").getJSONObject("player");
+
+        int frame_width = player.getInt("frame_width");
+        int frame_height = player.getInt("frame_height");
+
+        System.out.printf("frame_width: %d, frame_height: %d%n", frame_width, frame_height);
+        m_DebugInfoWindow.logf("frame_width: %d, frame_height: %d%n", frame_width, frame_height);
+
+        JSONObject animations = player.getJSONObject("animations");
+
+        List<Bitmap> bitmaps = new Vector<>();
+        int w = 0, h = 0;
+
+        List<String> anim = animations.keySet().stream().sorted().toList();
+
+        for (String key : anim) {
+            String path = animations.getJSONObject(key).getString("path");
+
+            System.out.println(path);
+            m_DebugInfoWindow.logf("animation at %s%n", path);
+
+            Bitmap bitmap = new Bitmap(Storage.readImage(path));
+
+            w = Math.max(w, bitmap.getWidth());
+            h += frame_height;
+
+            bitmaps.add(bitmap);
+        }
+
+        final int nx = w / frame_width;
+        final int ny = h / frame_height;
+        final TextureAtlas atlas = new TextureAtlas(frame_width, frame_height, nx, ny, 0x00000000).bind();
+
+        int y = 0;
+        for (final Bitmap bitmap : bitmaps) {
+            final int bw = bitmap.getWidth();
+
+            ByteBuffer buffer = bitmaps.get(y).getByteBuffer();
+            atlas.setTiles(0, y++, bw / frame_width, buffer);
+        }
+
+        m_PlayerAtlas = atlas.unbind();
+
+        m_PlayerModel.getMaterial().clearTextures();
+        m_PlayerModel.getMaterial().addTexture(m_PlayerAtlas.getTexture());
+
+        m_PlayerModel.getMaterial().getShader().bind()
+
+                .setUniformInt("sampler", 0)
+
+                .setUniformInt("atlas_width", w)
+
+                .setUniformInt("atlas_height", h)
+
+                .setUniformInt("frame_width", frame_width)
+
+                .setUniformInt("frame_height", frame_height)
+
+                .unbind();
     }
 
     /**
@@ -185,9 +273,10 @@ public class Graphics {
         final float w = m_Window.getWidth();
         final float h = m_Window.getHeight();
         final float a = w / h;
-        final float scale = 10.0f;
-        Matrix4f mat = new Matrix4f().ortho2D(-a * scale, a * scale, -scale, scale);
+        final float scale = 8.0f;
+        Matrix4f mat = new Matrix4f().setOrtho2D(-a * scale, a * scale, -scale, scale);
         m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("projection", mat.get(new float[16])).unbind();
     }
 
     /**
@@ -267,28 +356,23 @@ public class Graphics {
             atlas.setTile(x, y, buffer.clear().put(data).position(0));
         }
 
-        m_TextureAtlas = atlas.unbind();
+        m_TerrainAtlas = atlas.unbind();
 
         m_TerrainModel.getMaterial().clearTextures();
-        m_TerrainModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
+        m_TerrainModel.getMaterial().addTexture(m_TerrainAtlas.getTexture());
 
         m_TerrainModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
-
-        m_PlayerModel.getMaterial().clearTextures();
-        m_PlayerModel.getMaterial().addTexture(m_TextureAtlas.getTexture());
-
-        m_PlayerModel.getMaterial().getShader().bind().setUniformInt("sampler", 0).unbind();
 
         return this;
     }
 
     public Graphics generateWorldMesh(int[][][] world, int xOffset, int width, int height, int depth) {
 
-        final int atlasW = m_TextureAtlas.getWidth();
-        final int atlasH = m_TextureAtlas.getHeight();
-        final int atlasTW = m_TextureAtlas.getTileW();
-        final int atlasTH = m_TextureAtlas.getTileH();
-        final int atlasTX = m_TextureAtlas.getTilesX();
+        final int atlasW = m_TerrainAtlas.getWidth();
+        final int atlasH = m_TerrainAtlas.getHeight();
+        final int atlasTW = m_TerrainAtlas.getTileW();
+        final int atlasTH = m_TerrainAtlas.getTileH();
+        final int atlasTX = m_TerrainAtlas.getTilesX();
 
         final float invW = atlasTW / (float) atlasW;
         final float invH = atlasTH / (float) atlasH;
@@ -373,7 +457,7 @@ public class Graphics {
      * @return the texture atlas
      */
     public TextureAtlas getAtlas() {
-        return m_TextureAtlas;
+        return m_TerrainAtlas;
     }
 
     public Vector2f getCameraPosition() {
@@ -381,40 +465,186 @@ public class Graphics {
     }
 
     public Vector2f getPlayerPosition() {
-        return m_PlayerPosition;
+        return m_Player.getPosition();
     }
 
     public int getPlayerLayer() {
-        return m_PlayerLayer;
+        return m_Player.getLayer();
     }
 
-    public void moveCamera(Vector2f translation) {
+    public Graphics moveCamera(Vector2f translation) {
         m_CameraPosition.add(translation);
+        m_Moved = true;
+        return this;
     }
 
-    public void setCameraPosition(Vector2f position) {
+    public Graphics setCameraPosition(Vector2f position) {
         m_CameraPosition.set(position);
+        m_Moved = true;
+        return this;
     }
 
-    public void movePlayer(Vector2f translation) {
-        m_PlayerPosition.add(translation);
+    public Graphics movePlayer(Vector2f translation) {
+        m_Player.getPosition().add(translation);
+        m_Moved = true;
+        return this;
     }
 
-    public void setPlayerPosition(Vector2f position) {
-        m_PlayerPosition.set(position);
+    public Graphics setPlayerPosition(Vector2f position) {
+        m_Player.getPosition().set(position);
+        m_Moved = true;
+        return this;
     }
 
-    public void setPlayerLayer(int layer) {
-        m_PlayerLayer = layer;
+    public Graphics setPlayerLayer(int layer) {
+        m_Player.setLayer(layer);
+        m_Moved = true;
+        return this;
     }
 
-    public void updateCamera() {
-        Matrix4f view = new Matrix4f().translate(m_CameraPosition.x(), m_CameraPosition.y(), 0.0f).invert();
+    public Graphics updateCamera() {
+        Matrix4f view = new Matrix4f().setTranslation(-m_CameraPosition.x(), -m_CameraPosition.y(), 0.0f);
         m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("view", view.get(new float[16])).unbind();
+        return this;
     }
 
-    public void updatePlayer() {
+    public Graphics updatePlayer() {
+        float sy = 3.0f;
+        float sx = sy * 120.0f / 80.0f;
+        if (m_Player.isLookingLeft()) sx = -sx;
+        Matrix4f model = new Matrix4f().scale(sx, sy, 1.0f).translate(m_Player.getPosition().x() / sx - 0.5f, m_Player.getPosition().y() / sy - 0.5f, m_Player.getLayer() - 0.5f);
+        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
+        return this;
+    }
 
+    public Player getPlayer() {
+        return m_Player;
+    }
+
+    public LogWindow getDebugInfoWindow() {
+        return m_DebugInfoWindow;
+    }
+
+    private float m_Tick = 0;
+
+    private void updateAnimation() {
+        m_Tick += ImGui.getIO().getDeltaTime();
+        if (m_Tick > 0.1f) {
+            m_Tick = 0;
+            m_Player.nextFrame();
+        }
+
+        m_PlayerModel.getMaterial().getShader().bind()
+
+                .setUniformInt("animation", m_Player.getCurrentAnimation().index())
+
+                .setUniformInt("frame", m_Player.getCurrentFrame())
+
+                .unbind();
+    }
+
+    private void updateGUI() {
+        m_ImGuiHelper.loopOnce(() -> {
+
+            if (Input.canUseKeyboard())
+                if (Input.getKeyRelease(Input.KeyCode.O)) m_ShowSettingsWindow.set(!m_ShowSettingsWindow.get());
+
+            ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+
+            if (m_ShowSettingsWindow.get() && ImGui.begin("Settings", m_ShowSettingsWindow)) {
+                ImGui.checkbox("Show Demo", m_ShowDemoWindow);
+                ImGui.checkbox("Show Graphs", m_ShowGraphWindow);
+                ImGui.checkbox("Show Terrain Atlas", m_ShowTerrainAtlasWindow);
+                ImGui.checkbox("Show Player Atlas", m_ShowPlayerAtlasWindow);
+                ImGui.checkbox("Show Debug Info", m_ShowDebugInfoWindow);
+
+                ImGui.end();
+            }
+
+            if (m_ShowDemoWindow.get()) ImGui.showDemoWindow(m_ShowDemoWindow);
+
+            if (m_ShowGraphWindow.get() && ImGui.begin("Graphs", m_ShowGraphWindow)) {
+
+                ImGui.beginTabBar("Tabs");
+
+                for (int id = 0; id < m_GraphInfoList.size(); id++) {
+                    final GraphInfo info = m_GraphInfoList.get(id);
+
+                    if (ImGui.beginTabItem("Graph #" + id)) {
+                        if (ImPlot.beginPlot("Plot #" + id)) {
+                            final int res = info.resolution();
+                            final float invRes = 1.0f / (res - 1.0f);
+
+                            final Float[] xa = new Float[res];
+                            final Float[] ya = new Float[res];
+
+                            for (int i = 0; i < res; i++) {
+                                final float x = (info.xMax() - info.xMin()) * invRes * i + info.xMin();
+                                final float y = (info.yMax() - info.yMin()) * (info.graph() != null ? info.graph().at(x) : info.y() != null ? info.y()[i] : 0.0f) + info.yMin();
+                                xa[i] = x;
+                                ya[i] = y;
+                            }
+
+                            ImPlot.plotLine("Graph", xa, ya);
+                            ImPlot.endPlot();
+                        }
+                        ImGui.endTabItem();
+                    }
+                }
+
+                ImGui.endTabBar();
+                ImGui.end();
+            }
+
+            if (m_ShowTerrainAtlasWindow.get() && ImGui.begin("Terrain Atlas", m_ShowTerrainAtlasWindow)) {
+
+                float a = m_TerrainAtlas.getWidth() / (float) m_TerrainAtlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_TerrainAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
+
+            if (m_ShowPlayerAtlasWindow.get() && ImGui.begin("Player Atlas", m_ShowPlayerAtlasWindow)) {
+
+                float a = m_PlayerAtlas.getWidth() / (float) m_PlayerAtlas.getHeight();
+
+                float ww = ImGui.getContentRegionAvailX();
+                float wh = ImGui.getContentRegionAvailY();
+
+                int w = 0;
+                int h = 0;
+
+                if (ww < wh) {
+                    w = (int) ww;
+                    h = (int) (ww / a);
+                } else {
+                    w = (int) (wh * a);
+                    h = (int) wh;
+                }
+
+                ImGui.image(m_PlayerAtlas.getTexture().getHandle(), w, h);
+
+                ImGui.end();
+            }
+
+            if (m_ShowDebugInfoWindow.get()) m_DebugInfoWindow.draw("Debug Info", m_ShowDebugInfoWindow);
+        });
     }
 
     /**
@@ -423,6 +653,15 @@ public class Graphics {
      * @return true while the window has not been closed
      */
     public boolean loopOnce() {
+
+        // Update camera and player if necessary
+        if (m_Moved) {
+            updateCamera();
+            updatePlayer();
+            m_Moved = false;
+        }
+
+        updateAnimation();
 
         // Update Input System
         Input.loopOnce();
@@ -444,13 +683,9 @@ public class Graphics {
         glEnable(GL_DEPTH_TEST);
 
         // Render player
-        Matrix4f model = new Matrix4f().translate(m_PlayerPosition.x(), m_PlayerPosition.y(), m_PlayerLayer);
-        m_PlayerModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         m_PlayerModel.render();
 
         // Render terrain
-        model = new Matrix4f();
-        m_TerrainModel.getMaterial().getShader().bind().setUniformFloatMat4("model", model.get(new float[16])).unbind();
         m_TerrainModel.render();
 
         // Disable Depth Testing and Blending
@@ -458,111 +693,7 @@ public class Graphics {
         glDisable(GL_BLEND);
 
         // Do ImGui
-        m_ImGuiHelper.loopOnce(() -> {
-
-            ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
-
-            ImGui.begin("Graphs");
-            ImGui.beginTabBar("Tabs");
-
-            for (int id = 0; id < m_GraphInfoList.size(); id++) {
-                final GraphInfo info = m_GraphInfoList.get(id);
-
-                if (ImGui.beginTabItem("Graph #" + id)) {
-                    if (ImPlot.beginPlot("Plot #" + id)) {
-                        final int res = info.resolution();
-                        final float invRes = 1.0f / (res - 1.0f);
-
-                        final Float[] xa = new Float[res];
-                        final Float[] ya = new Float[res];
-
-                        for (int i = 0; i < res; i++) {
-                            final float x = (info.xMax() - info.xMin()) * invRes * i + info.xMin();
-                            final float y = (info.yMax() - info.yMin()) * (info.graph() != null ? info.graph().at(x) : info.y() != null ? info.y()[i] : 0.0f) + info.yMin();
-                            xa[i] = x;
-                            ya[i] = y;
-                        }
-
-                        ImPlot.plotLine("Graph", xa, ya);
-                        ImPlot.endPlot();
-                    }
-                    ImGui.endTabItem();
-                }
-            }
-
-            ImGui.endTabBar();
-            ImGui.end();
-
-            ImGui.showDemoWindow();
-
-            ImGui.begin("Atlas");
-
-            float a = m_TextureAtlas.getWidth() / (float) m_TextureAtlas.getHeight();
-
-            float ww = ImGui.getContentRegionAvailX();
-            float wh = ImGui.getContentRegionAvailY();
-
-            int w = 0;
-            int h = 0;
-
-            if (ww < wh) {
-                w = (int) ww;
-                h = (int) (ww / a);
-            } else {
-                w = (int) (wh * a);
-                h = (int) wh;
-            }
-
-            ImGui.image(m_TextureAtlas.getTexture().getHandle(), w, h);
-
-            ImGui.end();
-        });
-
-        // Camera movement
-        if (!ImGui.getIO().getWantCaptureKeyboard()) {
-            final float speed = ImGui.getIO().getDeltaTime() * 20.0f;
-            boolean move = false;
-
-            if (Input.getKey(Input.KeyCode.UP)) {
-                m_CameraPosition.y += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.DOWN)) {
-                m_CameraPosition.y -= speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.RIGHT)) {
-                m_CameraPosition.x += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.LEFT)) {
-                m_CameraPosition.x -= speed;
-                move = true;
-            }
-
-            if (move) updateCamera();
-
-            move = false;
-
-            if (Input.getKey(Input.KeyCode.W)) {
-                m_PlayerPosition.y += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.S)) {
-                m_PlayerPosition.y -= speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.D)) {
-                m_PlayerPosition.x += speed;
-                move = true;
-            }
-            if (Input.getKey(Input.KeyCode.A)) {
-                m_PlayerPosition.x -= speed;
-                move = true;
-            }
-
-            if (move) updatePlayer();
-        }
+        updateGUI();
 
         // Check if window is still open
         return m_Window.loopOnce();
@@ -574,11 +705,14 @@ public class Graphics {
     public void destroy() {
         m_Window.close(); // Destroy the window
 
-        if (m_TextureAtlas != null) m_TextureAtlas.close();
+        if (m_TerrainAtlas != null) m_TerrainAtlas.close();
+        if (m_PlayerAtlas != null) m_PlayerAtlas.close();
+
         m_ImGuiHelper.close();
 
         m_TerrainModel.close();
         m_SkyboxModel.close();
+        m_PlayerModel.close();
 
         // Terminate GLFW
         glfwTerminate();

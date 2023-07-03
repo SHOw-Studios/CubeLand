@@ -1,66 +1,88 @@
 package io.show.game.world;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
-import java.util.Vector;
-import java.util.*;
 
+/**
+ * @author Ilian O.
+ */
 public class World {
-    private int WIDTH;
-    private int HEIGHT;
-    private int chunk0 = 2;
-    private Random m_Random = new Random();
-    public final long heightSeed = m_Random.nextLong();
-    public final long orelikelynessSeed = m_Random.nextLong();
-    public final long treeHeightSeed = m_Random.nextLong();
-    public final long treeLikelinessSeed = m_Random.nextLong();
-    public final long noodleSeed = m_Random.nextLong();
-    public final long cheeseSeed = m_Random.nextLong();
-    public List<Chunk> Map = new Vector<>();
+    private int m_Width;
 
-    public enum Mapsize {LARGE, MEDIUM, SMALL}
 
-    public World(Mapsize mapsize, int[] graphicArr) {
+    private int m_Height;
+    private final Random m_Random = new Random();
+    public final long m_HeightSeed;
+    public final long m_OreLikelinessSeed;
+    public final long m_TreeHeightSeed;
+    public final long m_TreeLikelinessSeed;
+    //noodle and Cheese Seed are there for cave creation in the future
+    public final long m_NoodleSeed;
+    public final long m_CheeseSeed;
+    private final Map<Integer, Chunk> m_Chunks = new HashMap<>();
+    private final int[] m_BlockTypes;
+
+    public enum MapSize {LARGE, MEDIUM, SMALL}
+
+    public World(MapSize mapsize, int[] blockTypes) {
+        m_HeightSeed = m_Random.nextLong();
+        m_OreLikelinessSeed = m_Random.nextLong();
+        m_TreeHeightSeed = m_Random.nextLong();
+        m_TreeLikelinessSeed = m_Random.nextLong();
+        m_NoodleSeed = m_Random.nextLong();
+        m_CheeseSeed = m_Random.nextLong();
+
         switch (mapsize) {
             case MEDIUM -> {
-                WIDTH = Constants.MAP_MEDIUM_WIDTH;
-                HEIGHT = Constants.MAP_MEDIUM_HEIGHT;
+                m_Width = Constants.MAP_MEDIUM_WIDTH;
+                m_Height = Constants.MAP_MEDIUM_HEIGHT;
             }
             case LARGE -> {
-                WIDTH = Constants.MAP_LARGE_WIDTH;
-                HEIGHT = Constants.MAP_LARGE_HEIGHT;
+                m_Width = Constants.MAP_LARGE_WIDTH;
+                m_Height = Constants.MAP_LARGE_HEIGHT;
             }
             case SMALL -> {
-                WIDTH = Constants.MAP_SMALL_WIDTH;
-                HEIGHT = Constants.MAP_SMALL_HEIGHT;
+                m_Width = Constants.MAP_SMALL_WIDTH;
+                m_Height = Constants.MAP_SMALL_HEIGHT;
             }
         }
-        for (int i = 0; i < WIDTH / 16; i++) {
-            Map.add(new Chunk(HEIGHT, i * 16, this, graphicArr));
-        }
+
+        m_BlockTypes = blockTypes;
+
+        for (int i = 0; i < m_Width; i += Chunk.getWidth())
+            m_Chunks.put(i / Chunk.getWidth(), new Chunk(i, this, blockTypes));
+
+    }
+
+    public World(io.show.storage.World StoredWorld, int[] blockTypes) {
+        m_HeightSeed = StoredWorld.getHeightSeed();
+        m_OreLikelinessSeed = StoredWorld.getOreLikelinessSeed;
+        m_TreeHeightSeed = StoredWorld.getTreeHeightSeed();
+        m_TreeLikelinessSeed = StoredWorld.getTreeLikelinessSeed();
+        m_NoodleSeed = StoredWorld.getNoodleSeed();
+        m_CheeseSeed = StoredWorld.getCheeseSeed();
+        m_BlockTypes = blockTypes;
     }
 
     public Chunk getChunkAtPos(int pos) {
-        return Map.get(pos + chunk0);
+        return m_Chunks.get(pos / Chunk.getWidth());
     }
 
-//    public static void main(String[] args) {
-//        int[][][] arr1 = {{{1, 2}, {3, 4}, {5, 6}, {7, 8}}, {{9, 10}, {11, 12}}};
-//        int[][][] arr2 = {{{13, 14}, {15, 16}, {17, 18}, {19, 20}}, {{21, 212}, {22, 23}}};
-//        int[][][] arr3 = {{{24, 25}, {26, 27}}, {{28, 29}, {30, 31}}};
-//        int[][][] arr4 = {{{32, 33}, {34, 35}}, {{36, 37}, {38, 39}}};
-//        int[][][] arr5 = {{{40, 41}, {42, 43}}, {{44, 45}, {46, 47}}};
-//        int[][][] result = append_5_3DArrays(arr1, arr2, arr3, arr4, arr5);
-//
-//        // Print the appended array
-//        for (int[][] arr : result) {
-//            for (int[] row : arr) {
-//                System.out.println(Arrays.toString(row));
-//            }
-//            System.out.println();
-//        }
-//    }
+    public int getChunkIndexAtPos(int pos) {
+        return pos / Chunk.getWidth();
+    }
 
+    public Chunk getChunk(int index) {
+        return m_Chunks.get(index);
+    }
+
+    public int getHeight() {
+        return m_Height;
+    }
+
+    //A relict of the past. Maybe a war crime, but it worked
+    /*
     public static int[][][] append_5_3DArrays(int[][][] arr1, int[][][] arr2, int[][][] arr3, int[][][] arr4, int[][][] arr5) {
         int depth = arr1.length;
         int chunkWidth = arr1[0][0].length;
@@ -113,6 +135,46 @@ public class World {
 
 
         return result;
+    }
+*/
+
+    /**
+     * make a 3d array containing the given chunks inclusively
+     *
+     * @param startChunk first chunk inclusive
+     * @param endChunk   last chunk inclusive
+     * @return a 3d world array
+     */
+    public int[][][] makeWorldArray(int startChunk, int endChunk) {
+        int span = endChunk - startChunk + 1;
+
+        int[][][] world = new int[Chunk.getDepth()][m_Height][Chunk.getWidth() * span];
+
+        for (int c = 0; c < span; c++) {
+            Chunk chunk = m_Chunks.get(c + startChunk);
+
+            if (chunk == null) {
+                m_Chunks.put(c + startChunk, new Chunk(c + startChunk, this, m_BlockTypes));
+                chunk = m_Chunks.get(c + startChunk);
+            }
+
+            int[][][] blocks = chunk.getBlocks();
+
+            for (int k = 0; k < Chunk.getDepth(); k++)
+                for (int j = 0; j < chunk.getHeight(); j++)
+                    System.arraycopy(blocks[k][j], 0, world[k][j], c * Chunk.getWidth(), Chunk.getWidth());
+        }
+
+        return world;
+    }
+
+    /**
+     * add A chunk to the Hashmap
+     *
+     * @param index
+     */
+    public void addChunk(int index) {
+        m_Chunks.put(index, new Chunk(index, this, m_BlockTypes));
     }
 
 }

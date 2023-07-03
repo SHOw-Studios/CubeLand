@@ -1,41 +1,40 @@
 package io.show.game.world;
 
-import org.joml.SimplexNoise;
 import vendor.opensimplex2.OpenSimplex2;
 
-import java.util.Random;
-
+/**
+ * @author Ilian O.
+ */
 public class Generator {
-    private double xOff;
-    private Random random = new Random();
-    private int HEIGHT;
-    private int WIDTH;
-    private int DEPTH;
-    private float scale = 0.1f;
+    private double m_xOff;
+    private int m_HEIGHT;
+    private int m_WIDTH;
+    private int m_DEPTH;
+    private float m_scale = 0.1f;
     private long m_HeightSeed;
     private int m_StartPos;
     private long m_OrelikelynessSeed;
-    private int[] graphicArray;
+    private int[] m_graphicArray;
 
+    /**
+     * Generates a Generator depending on the chunk and world it should generate a mapslice for.
+     * The inputChunk is there to get the Chunkspecific values. InputWorld has the same task.
+     */
     public Generator(World inputWorld, Chunk inputChunk, int[] graphicArray) {
-        HEIGHT = inputChunk.getHEIGHT();
-        WIDTH = inputChunk.getWIDTH();
-        DEPTH = inputChunk.getDEPTH();
-        xOff = inputChunk.getM_StartPosition();
-        m_HeightSeed = inputWorld.heightSeed;
-        m_StartPos = inputChunk.getM_StartPosition();
-        this.graphicArray = graphicArray;
-        m_OrelikelynessSeed = inputWorld.orelikelynessSeed;
+        m_HEIGHT = inputChunk.getHeight();
+        m_WIDTH = inputChunk.getWidth();
+        m_DEPTH = inputChunk.getDepth();
+        m_xOff = inputChunk.getStartPosition();
+        m_HeightSeed = inputWorld.m_HeightSeed;
+        m_StartPos = inputChunk.getStartPosition();
+        m_graphicArray = graphicArray;
+        m_OrelikelynessSeed = inputWorld.m_OreLikelinessSeed;
         ;
     }
 
-//    public static void print2D(int[][] mat) {
-//        // Loop through all rows
-//        // Loop through all elements of current row
-//        for (int[] ints : mat)
-//            for (int anInt : ints) System.out.print(anInt + " ");
-//    }
-
+    /**
+     * Returns an int[][][] Array representing the generated map
+     */
     public int[][][] generate() {
         int[][][] Map;
         Map = initMap();
@@ -43,47 +42,34 @@ public class Generator {
     }
 
     /**
-     * Returns an int[][] Array with the values on witch PerlinNoise is set to 1,
-     * to get a value that saperates air and Ground
+     * Returns an int[][] Array with values!=0 if PerlinNoise is higher than a threshold,
+     * to add Blocks to the World
      */
     public int[][][] initMap() {
         int[][][] MapArray;
-        MapArray = new int[DEPTH][HEIGHT][WIDTH];
-        for (int i = 0; i < DEPTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                for (int k = 0; k < WIDTH; k++) {
-                    float noise = HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * scale, (xOff + k) * scale, i * scale) * 20.0f;
-                    float orenoise = OpenSimplex2.noise3_ImproveXY(m_OrelikelynessSeed, j * scale, (xOff + k) * scale, i * scale);
-                    //-150 to get min 50 Ground and min 100 to build above
-                    //+50 to get min 50 Ground
+        MapArray = new int[m_DEPTH][m_HEIGHT][m_WIDTH];
+        for (int i = 0; i < m_DEPTH; i++) {
+            for (int j = 0; j < m_HEIGHT; j++) {
+                for (int k = 0; k < m_WIDTH; k++) {
+                    float noise = m_HEIGHT / 2 + OpenSimplex2.noise3_ImproveXY(m_HeightSeed, j * m_scale, (m_xOff * 16 + k) * m_scale, i * m_scale) * 20.0f;
+                    float orenoise = OpenSimplex2.noise3_ImproveXY(m_OrelikelynessSeed, j * m_scale, (m_xOff * 16 + k) * m_scale, i * m_scale);
                     float d = noise - j;
-                    int roundedNoise = Math.round(noise);
-                    if (d <= 2 && d > 0) MapArray[i][j][k] = graphicArray[4];
-                    else if (j < noise && orenoise < -0.6) MapArray[i][j][k] = graphicArray[11];
-                    else if (j < noise && orenoise < -0.5) MapArray[i][j][k] = graphicArray[12];
-                    else if (j < noise && orenoise > 0.6) MapArray[i][j][k] = graphicArray[11];
-                    else if (j < noise && orenoise > 0.5) MapArray[i][j][k] = graphicArray[13];
-                    else if (j < noise) MapArray[i][j][k] = graphicArray[14];
+                    if (d <= 2 && d > 0) MapArray[i][j][k] = m_graphicArray[4];
+                    else if (j < noise && orenoise < -0.6) MapArray[i][j][k] = m_graphicArray[11];
+                    else if (j < noise && orenoise < -0.5) MapArray[i][j][k] = m_graphicArray[12];
+                    else if (j < noise && orenoise > 0.6) MapArray[i][j][k] = m_graphicArray[11];
+                    else if (j < noise && orenoise > 0.5) MapArray[i][j][k] = m_graphicArray[13];
+                    else if (j < noise) MapArray[i][j][k] = m_graphicArray[14];
                     else {
-                        d = HEIGHT / 2 - j;
-                        if (d <= 1 && d > 0) MapArray[i][j][k] = graphicArray[3];
-                        else if (d > 0) MapArray[i][j][k] = graphicArray[2];
-                        else MapArray[i][j][k] = graphicArray[15];
+                        d = m_HEIGHT / 2 - j;
+                        if (d <= 1 && d > 0) MapArray[i][j][k] = m_graphicArray[3];
+                        else if (d > 0) MapArray[i][j][k] = m_graphicArray[2];
+                        else MapArray[i][j][k] = m_graphicArray[15];
                     }
                 }
             }
         }
         return MapArray;
     }
-
-//    public int[][][] setWater(int[][][] Map) {
-//        for (int i = 0; i < Map[0].length; i++) {
-//            for (int j = Map[1].length / 2; j < Map[1].length; j++) {
-//                if (Map[j][i][0] != 1) Map[j][i][0] = 2;
-//                else break;
-//            }
-//        }
-//        return Map;
-//    }
 
 }

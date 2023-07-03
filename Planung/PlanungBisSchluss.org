@@ -2,8 +2,8 @@
 #+AUTHOR: Ilian
 #+DATE: 2023-06-13
 
-* Todo [0/2]
-** [ ] Cube
+* Todo [1/2]
+** [X] Cube
 ** [ ] Physiks [0/3]
 *** [ ] test
 *** [ ] test2

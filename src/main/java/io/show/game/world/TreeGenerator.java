@@ -2,12 +2,17 @@ package io.show.game.world;
 
 import vendor.opensimplex2.OpenSimplex2;
 
-import java.util.Random;
+/**
+ * This Class does nothing at the moment its just implemented to be needed later and not finished
+ * later all of this should work like this:
+ * if a Tree should be placed on a position, the highest Block on this Width is searched and if it is earth,
+ * a hardcoded Tree will be set. The hardcoded Tree function doesn't work at the moment and will maybe be implemented later.
+ */
 
 public class TreeGenerator {
     public TreeGenerator(World world) {
-        m_HeightSeed = world.treeHeightSeed;
-        m_LikelinessSeed = world.treeLikelinessSeed;
+        m_HeightSeed = world.m_TreeHeightSeed;
+        m_LikelinessSeed = world.m_TreeLikelinessSeed;
     }
 
     private long m_HeightSeed;
