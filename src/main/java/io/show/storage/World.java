@@ -83,12 +83,12 @@ public class World {
 
     public World(io.show.game.world.World gameWorld, String name) {
         m_Name = name;
-        this.heightSeed = gameWorld.m_HeightSeed;
-        this.orelikelynessSeed = gameWorld.m_OreLikelinessSeed;
-        this.treeHeightSeed = gameWorld.m_TreeHeightSeed;
-        this.treeLikelinessSeed = gameWorld.m_TreeLikelinessSeed;
-        this.noodleSeed = gameWorld.m_NoodleSeed;
-        this.cheeseSeed = gameWorld.m_CheeseSeed;
+        this.heightSeed = gameWorld.getHeightSeed();
+        this.orelikelynessSeed = gameWorld.getOreLikelinessSeed();
+        this.treeHeightSeed = gameWorld.getTreeHeightSeed();
+        this.treeLikelinessSeed = gameWorld.getTreeLikelinessSeed();
+        this.noodleSeed = gameWorld.getNoodleSeed();
+        this.cheeseSeed = gameWorld.getCheeseSeed();
     }
 
     public String getName() {
