@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import io.show.game.physics.PlayerPhysics;
+
 
 /**
  * @author Ilian O.
@@ -145,110 +147,49 @@ public class GameLoop {
         g.setPlayerLayer(1);
         g.getDebugInfoWindow().logf("PlayerLayer: %d \n", g.getPlayerLayer());
 
-        //Some tries to implement physics.
-        /*
-        org.dyn4j.world.World<Body> dynworld = new org.dyn4j.world.World<Body>();
-        Body player = new Body();
-        player.addFixture(Geometry.createRectangle(1.0, 2.0));
-        player.translate(new Vector2(g.getPlayerPosition().x(), g.getPlayerPosition().y()));
-        player.setMass(MassType.NORMAL);
-        dynworld.addBody(player);
-
-        for (int i = 0; i < map[g.getPlayerLayer()].length; i++) {
-            for (int j = 0; j < map[g.getPlayerLayer()][i].length; j++) {
-                if (map[g.getPlayerLayer()][i][j] != 2 && map[g.getPlayerLayer()][i][j] != 3 && map[g.getPlayerLayer()][i][j] != 15) {
-                    Body block = new Body();
-                    block.addFixture(Geometry.createRectangle(1.0, 1.0));
-                    block.translate(j, i); // translate to appropriate world coordinates
-                    block.setUserData(BLOCK);
-                    dynworld.addBody(block);
-                }
-            }
-        }
-        dynworld.addStepListener(new StepListener<Body>() {
-            @Override
-            public void begin(TimeStep step, PhysicsWorld<Body, ?> world) {
-                begin(step, world);
-                boolean isGround = false;
-                List<ContactConstraint<Body>> contacts = world.getContacts(player);
-                for (ContactConstraint<Body> cc : contacts) {
-                    if (is(cc.getOtherBody(player), BLOCK) && cc.isEnabled()) {
-                        isGround = true;
-                    }
-                }
-                if (!isGround) {
-                    isGround = false;
-                }
-            }
-
-            @Override
-            public void updatePerformed(TimeStep step, PhysicsWorld<Body, ?> world) {
-
-            }
-
-            @Override
-            public void postSolve(TimeStep step, PhysicsWorld<Body, ?> world) {
-
-            }
-
-            @Override
-            public void end(TimeStep step, PhysicsWorld<Body, ?> world) {
-
-            }
-
-        });
-        dynworld.addContactListener(new ContactListenerAdapter<Body>() {
-            @Override
-            public void collision(ContactCollisionData<Body> collision) {
-                ContactConstraint<Body> cc = collision.getContactConstraint();
-                trackIsOnGround(cc);
-                super.collision(collision);
-            }
-        });
-*/
 
         // this is the main loop, it stops when the graphics' window closes
+        Vector2f lastPlayerPos = new Vector2f(10f, 10f);
+        PlayerPhysics playerPhysics = new PlayerPhysics(g);
         while (g.loopOnce()) {
-            //was there for physics
-//            g.setPlayerPosition(g.getPlayerPosition().add((float) dynworld.getBody(0).getChangeInPosition().x, (float) dynworld.getBody(0).getChangeInPosition().y));
-            /*
-            for (int i = 1; i < dynworld.getBodyCount(); i++) {
-                dynworld.removeBody(i);
-            }
-*/
 
+            float dx = lastPlayerPos.x * 1000 - g.getPlayerPosition().x * 1000;
+            float dy = lastPlayerPos.y * 1000 - g.getPlayerPosition().y * 1000;
+            if (dx < 0) {
+                dx = dx * -1;
+            }
+            if (dy < 0) {
+                dy = dy * -1;
+            }
+            Vector2f deltaPos = new Vector2f(dx, dy);
+
+            lastPlayerPos = g.getPlayerPosition();
             //To check for Keyboard inputs and set movement and animations accordingly
             if (!ImGui.getIO().getWantCaptureKeyboard()) {
-                final float speed = Input.getDeltaTime() * 15.0f;
+                final float speed = 15.0f;
                 boolean move = false;
                 if (Input.getKey(Input.KeyCode.W) || Input.getKey(Input.KeyCode.UP)) {
-                    g.movePlayer(new Vector2f(0, speed));
+                    playerPhysics.addYSpeed(speed);
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.S) || Input.getKey(Input.KeyCode.DOWN)) {
-                    g.movePlayer(new Vector2f(0, -speed));
+                    playerPhysics.addYSpeed(-speed);
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.A) || Input.getKey(Input.KeyCode.LEFT)) {
-                    g.movePlayer(new Vector2f(-speed, 0));
+                    playerPhysics.addXSpeed(-speed);
                     g.getPlayer().setLookingLeft(true);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
                 if (Input.getKey(Input.KeyCode.D) || Input.getKey(Input.KeyCode.RIGHT)) {
-                    g.movePlayer(new Vector2f(speed, 0));
+                    playerPhysics.addXSpeed(speed);
                     g.getPlayer().setLookingLeft(false);
                     if (g.getPlayer().getCurrentAnimation() != Player.ANIM_RUN)
                         g.getPlayer().setCurrentAnimation(Player.ANIM_RUN);
                     move = true;
                 }
-                //some more relicts of the physics experiment
-                /*
-                if (Input.getKey(Input.KeyCode.SPACE)) {
-                    dynworld.getBody(0).clearForce();
-                    dynworld.getBody(0).applyForce(new Vector2(0, 10));
-                }*/
                 if (Input.getKeyPress(Input.KeyCode.LEFT_CONTROL)) {
                     if (g.getPlayerLayer() == 0) g.setPlayerLayer(1);
                     else g.setPlayerLayer(0);
@@ -270,32 +211,23 @@ public class GameLoop {
                     map = world.makeWorldArray(lastChunk - 3, lastChunk + 3);
                     g.generateWorldMesh(map, offset * Chunk.getWidth(), map[0][0].length, map[0].length, map.length);
                 }
-                if (!move) if (g.getPlayer().getCurrentAnimation() != Player.ANIM_IDLE)
+                if (!move) if (g.getPlayer().getCurrentAnimation() != Player.ANIM_IDLE) {
+                    playerPhysics.setSpeed(new Vector2f(0, 0));
                     g.getPlayer().setCurrentAnimation(Player.ANIM_IDLE);
+                }
 
             }
 
-            /**
-             * Not working physics:
-             */
-//            for (int i = ((int) g.getPlayerPosition().y() - 5 + offset * Chunk.getWidth()); i < ((int) g.getPlayerPosition().y() + 5 + offset * Chunk.getWidth()); i++) {
-//                for (int j = ((int) g.getPlayerPosition().x() - 5); i < ((int) g.getPlayerPosition().x() + 5); j++) {
-//                    if (0 <= i && i < map[0].length && 0 <= j && j < map[0][0].length)
-//                        if (map[g.getPlayerLayer()][i][j] != 15 && map[g.getPlayerLayer()][i][j] != 2) {
-//                            Body body = new Body();
-//                            body.addFixture(Geometry.createRectangle(1, 1));
-//                            body.translate(j, i);
-//                            body.setMass(MassType.INFINITE);
-//                            dynworld.addBody(body);
-//                        }
-//                }
-//            }
-//            dynworld.update(1000);
+            //Gravity
+//            playerPhysics.addYSpeed((float) Constants.GRAVITY);
+
+            playerPhysics.update();
 
             g.setCameraPosition(g.getPlayerPosition());
             g.updateCamera();
 
-            g.getDebugInfoWindow().logf("PlayerPos: %f, %f\n", g.getPlayerPosition().x(), g.getPlayerPosition().y());
+            g.getDebugInfoWindow().logf("PlayerPos: %f, %f \tDeltaPos %f, %f\n", g.getPlayerPosition().x(), g.getPlayerPosition().y(), deltaPos.x, deltaPos.y);
+
         }
         //Tries saving the world If not possible it prints an error.
         try {

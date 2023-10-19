@@ -48,6 +48,7 @@ public class World {
 
     public enum MapSize {LARGE, MEDIUM, SMALL}
 
+    //Generates world from Mapsize and blockTypes
     public World(MapSize mapsize, int[] blockTypes) {
         m_HeightSeed = m_Random.nextLong();
         m_OreLikelinessSeed = m_Random.nextLong();
@@ -78,6 +79,7 @@ public class World {
 
     }
 
+    //Generates World from StoredWorld and blockTypes
     public World(io.show.storage.World StoredWorld, int[] blockTypes) {
         m_Height = Constants.MAP_SMALL_HEIGHT;
         m_HeightSeed = StoredWorld.getHeightSeed();
